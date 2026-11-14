@@ -424,5 +424,54 @@ reason    încadrare fiscală + articole      răspuns cu surse citabile</code><
     document.getElementById('ok').hidden = false;
   });
 </script>
+  <script>
+  const supabaseUrl = 'https://zaizyyfpzdxvulswmppi.supabase.co';
+  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InphaXp5eWZwemR4dnVsc3dtcHBpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ2Nzg4OTksImV4cCI6MjExMDI1NDg5OX0.HU0puttDYs14aCU150wsR9FedJafHB1oShNGjh4hINc';
+  const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+  document.getElementById('wl').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const name = document.getElementById('nume').value;
+    const email = document.getElementById('email').value;
+    const cui = document.getElementById('cui').value;
+
+    const { data, error } = await _supabase
+      .from('waitlist')
+      .insert([{ name, email, cui }]);
+
+    if (error) {
+      alert('A apărut o eroare. Te rugăm să încerci din nou.');
+      console.error(error);
+    } else {
+      alert('Te-ai înscris cu succes pe lista de așteptare!');
+      e.target.reset(); // Golește formularul după trimitere
+    }
+  });
+  </script>
+  const supabaseUrl = 'https://zaizyyfpzdxvulswmppi.supabase.co';
+  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InphaXp5eWZwemR4dnVsc3dtcHBpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ2Nzg4OTksImV4cCI6MjExMDI1NDg5OX0.HU0puttDYs14aCU150wsR9FedJafHB1oShNGjh4hINc';
+  const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+  document.getElementById('wl').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const name = document.getElementById('nume').value;
+    const email = document.getElementById('email').value;
+    const cui = document.getElementById('cui').value;
+
+    const { data, error } = await _supabase
+      .from('waitlist')
+      .insert([{ name, email, cui }]);
+
+    if (error) {
+      alert('A apărut o eroare. Te rugăm să încerci din nou.');
+      console.error(error);
+    } else {
+      alert('Te-ai înscris cu succes pe lista de așteptare!');
+      e.target.reset(); // Golește formularul după trimitere
+    }
+  });
+  </script>
 </body>
 </html>
