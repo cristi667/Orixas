@@ -53,7 +53,36 @@
 <!-- Navigare -->
 <header class="sticky top-0 z-20 border-b border-slate-800/70 bg-slate-950/90 backdrop-blur">
   <div class="mx-auto flex h-14 max-w-6xl items-center justify-between px-5">
-    <a href="#" class="font-mono text-sm font-medium text-white">orixas</a>
+    <!-- LOGO-UL SVG AICI -->
+    <a href="#" class="flex items-center">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 190 48" width="130" height="33" role="img" aria-label="Orixas" style="color:#FAFAFA">
+        <title>Orixas</title>
+        <defs>
+          <linearGradient id="ox-flow" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#22D3EE"/>
+            <stop offset="1" stop-color="#3B82F6"/>
+          </linearGradient>
+          <radialGradient id="ox-glow">
+            <stop offset="0" stop-color="#22D3EE" stop-opacity=".45"/>
+            <stop offset="1" stop-color="#22D3EE" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+
+        <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M13.27 33 A14 14 0 1 0 13.27 15" stroke="currentColor" stroke-width="3.5"/>
+          <path d="M3 15 H7 L21 24" stroke="url(#ox-flow)" stroke-width="1.6" opacity=".5"/>
+          <path d="M3 33 H7 L21 24" stroke="url(#ox-flow)" stroke-width="1.6" opacity=".5"/>
+          <path d="M3 24 H21" stroke="url(#ox-flow)" stroke-width="2.4"/>
+        </g>
+        <circle cx="24" cy="24" r="8" fill="url(#ox-glow)"/>
+        <circle cx="24" cy="24" r="3.4" fill="#22D3EE"/>
+
+        <text x="62" y="34" fill="currentColor"
+              font-family="'Geist','Inter','SF Pro Display','Helvetica Neue',Arial,sans-serif"
+              font-size="33" font-weight="600" letter-spacing="-0.8">orixas</text>
+      </svg>
+    </a>
+
     <nav class="hidden gap-8 text-sm text-slate-400 md:flex" aria-label="Principal">
       <a href="#arhitectura" class="hover:text-white">Arhitectură</a>
       <a href="#fondatori" class="hover:text-white">Founder Bundle</a>
@@ -80,10 +109,10 @@
 
   <pre class="mt-16 overflow-x-auto rounded-md border border-slate-800 bg-slate-900/40 p-5 font-mono text-[13px] leading-6 text-slate-400" aria-label="Exemplu de execuție a pipeline-ului"><code>orixas run --tenant acme-srl
 
-ingest    Monitorul Oficial, Cod Fiscal     index vectorial actualizat
-parse     factura-0142.xml (UBL 2.1)        structură normalizată
-validate  schemă ANAF, CIUS-RO              valid
-reason    încadrare fiscală + articole      răspuns cu surse citabile</code></pre>
+ingest   Monitorul Oficial, Cod Fiscal     index vectorial actualizat
+parse    factura-0142.xml (UBL 2.1)        structură normalizată
+validate schemă ANAF, CIUS-RO              valid
+reason   încadrare fiscală + articole      răspuns cu surse citabile</code></pre>
 </section>
 
 <!-- Arhitectura -->
@@ -98,7 +127,7 @@ reason    încadrare fiscală + articole      răspuns cu surse citabile</code><
       <article class="grid gap-6 py-8 lg:grid-cols-2">
         <div>
           <h3 class="text-base font-medium text-white">Legal RAG Pipeline (iLegis)</h3>
-          <p class="mt-2 text-sm leading-relaxed text-slate-400">Monitorul Oficial și Codul Fiscal sunt indexate în baze vectorale. Agenții citesc textul normativ în vigoare și răspund doar pe baza lui, pentru acuratețe deterministă.</p>
+          <p class="mt-2 text-sm leading-relaxed text-slate-400">Monitorul Oficial și Codul Fiscal sunt indexate în baze vectoriale. Agenții citesc textul normativ în vigoare și răspund doar pe baza lui, pentru acuratețe deterministă.</p>
         </div>
         <dl class="spec">
           <div><dt>Surse</dt><dd>Monitorul Oficial, Cod Fiscal</dd></div>
@@ -386,8 +415,8 @@ reason    încadrare fiscală + articole      răspuns cu surse citabile</code><
   </div>
 </dialog>
 
+<!-- Script pentru Modale -->
 <script>
-  // Modale: deschidere prin [data-open], închidere prin [data-close], click pe fundal sau Escape (nativ în <dialog>)
   (function () {
     var down;
     document.addEventListener('click', function (e) {
@@ -412,65 +441,32 @@ reason    încadrare fiscală + articole      răspuns cu surse citabile</code><
   })();
 </script>
 
+<!-- Script pentru Supabase / Waitlist -->
 <script>
-  document.getElementById('wl').addEventListener('submit', function (e) {
+  const supabaseUrl = 'https://zaizyyfpzdxvulswmppi.supabase.co';
+  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InphaXp5eWZwemR4dnVsc3dtcHBpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ2Nzg4OTksImV4cCI6MjExMDI1NDg5OX0.HU0puttDYs14aCU150wsR9FedJafHB1oShNGjh4hINc';
+  const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+  document.getElementById('wl').addEventListener('submit', async (e) => {
     e.preventDefault();
-    var data = Object.fromEntries(new FormData(e.target));
-    // TODO: trimite $data către backend-ul tău, de exemplu:
-    // fetch('/api/waitlist', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-    document.getElementById('okmail').textContent = data.email;
-    e.target.hidden = true;
-    document.getElementById('ok').hidden = false;
+    
+    const name = document.getElementById('nume').value;
+    const email = document.getElementById('email').value;
+    const cui = document.getElementById('cui').value;
+
+    const { data, error } = await _supabase
+      .from('waitlist')
+      .insert([{ name, email, cui }]);
+
+    if (error) {
+      alert('A apărut o eroare. Te rugăm să încerci din nou.');
+      console.error(error);
+    } else {
+      document.getElementById('okmail').textContent = email;
+      e.target.hidden = true;
+      document.getElementById('ok').hidden = false;
+    }
   });
 </script>
-  <script>
-  const supabaseUrl = 'https://zaizyyfpzdxvulswmppi.supabase.co';
-  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InphaXp5eWZwemR4dnVsc3dtcHBpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ2Nzg4OTksImV4cCI6MjExMDI1NDg5OX0.HU0puttDYs14aCU150wsR9FedJafHB1oShNGjh4hINc';
-  const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
-
-  document.getElementById('wl').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    const name = document.getElementById('nume').value;
-    const email = document.getElementById('email').value;
-    const cui = document.getElementById('cui').value;
-
-    const { data, error } = await _supabase
-      .from('waitlist')
-      .insert([{ name, email, cui }]);
-
-    if (error) {
-      alert('A apărut o eroare. Te rugăm să încerci din nou.');
-      console.error(error);
-    } else {
-      alert('Te-ai înscris cu succes pe lista de așteptare!');
-      e.target.reset(); // Golește formularul după trimitere
-    }
-  });
-  </script>
-  const supabaseUrl = 'https://zaizyyfpzdxvulswmppi.supabase.co';
-  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InphaXp5eWZwemR4dnVsc3dtcHBpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ2Nzg4OTksImV4cCI6MjExMDI1NDg5OX0.HU0puttDYs14aCU150wsR9FedJafHB1oShNGjh4hINc';
-  const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
-
-  document.getElementById('wl').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    const name = document.getElementById('nume').value;
-    const email = document.getElementById('email').value;
-    const cui = document.getElementById('cui').value;
-
-    const { data, error } = await _supabase
-      .from('waitlist')
-      .insert([{ name, email, cui }]);
-
-    if (error) {
-      alert('A apărut o eroare. Te rugăm să încerci din nou.');
-      console.error(error);
-    } else {
-      alert('Te-ai înscris cu succes pe lista de așteptare!');
-      e.target.reset(); // Golește formularul după trimitere
-    }
-  });
-  </script>
 </body>
 </html>
