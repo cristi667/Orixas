@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="ro">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Orixas.app Demo Live - dashboard interactiv multi-agent." />
+    <title>Orixas.app | Demo Live</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="assets/css/styles.css" />
+  </head>
+  <body>
+    <header class="page-header">
+      <div class="container navbar">
+        <a class="brand" href="index.html">Orixas<span>.app</span></a>
+        <button id="navToggle" class="nav-toggle" aria-label="Deschide meniu" aria-expanded="false">☰</button>
+        <nav id="navLinks" class="nav-links" aria-label="Navigație principală">
+          <a class="nav-link" data-page="index.html" href="index.html">Acasă</a>
+          <a class="nav-link" data-page="app.html" href="app.html">Demo Live</a>
+          <a class="nav-link" data-page="pricing.html" href="pricing.html">Pricing</a>
+          <a class="nav-link" data-page="faq.html" href="faq.html">FAQ</a>
+          <a class="nav-link" data-page="arhitectura.html" href="arhitectura.html">Tehnologie</a>
+          <a class="nav-cta" href="auth.html">Rezervă Founder</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="container">
+      <section class="app-shell reveal">
+        <aside class="sidebar">
+          <h2 style="margin-bottom: 0.4rem">Tenant Activ</h2>
+          <label class="label" for="companySelect">Selectează firma</label>
+          <select id="companySelect" class="mono">
+            <option value="RO41892014">ACME LOGISTIC SRL - RO41892014</option>
+            <option value="RO12900455">NOVA RETAIL SRL - RO12900455</option>
+            <option value="RO39211701">FENIX SERVICES SRL - RO39211701</option>
+          </select>
+          <p id="companyMeta" class="mono" style="margin-top: 0.7rem"></p>
+
+          <div class="agent-switch">
+            <button class="agent-btn active" data-agent="financiar">
+              Agent Financiar (SPV &amp; TVA)
+            </button>
+            <button class="agent-btn" data-agent="juridic">
+              Agent Juridic (Contracte &amp; Legislație)
+              <span class="badge badge-muted" style="margin-left: 0.4rem">În curând - Inclus în Founder Bundle</span>
+            </button>
+          </div>
+
+          <h3 style="margin-bottom: 0.4rem">Memorie firmă</h3>
+          <ul id="memoryList" class="log-list"></ul>
+        </aside>
+
+        <section class="workspace">
+          <div class="toolbar">
+            <div>
+              <h1 style="margin-bottom: 0.35rem">Dashboard Demo Orixas</h1>
+              <p id="demoMessage" class="text-muted" style="margin-bottom: 0">
+                Agent Financiar activ. Rulează demo-ul pentru flux complet SPV -> CIUS-RO -> fiscal -> aprobare.
+              </p>
+            </div>
+            <div class="actions" style="margin-top: 0">
+              <span class="status">Founder seats: <strong id="founderSeats" class="mono">20</strong>/20</span>
+              <span id="syncStatus" class="status">În așteptare</span>
+              <button id="runDemoBtn" class="btn btn-primary">Rulează Demo Automat</button>
+            </div>
+          </div>
+
+          <div class="panel">
+            <h3>Flux automat demo</h3>
+            <div class="pipeline">
+              <div class="pipeline-item">1. Autentificare OAuth2 în SPV ANAF</div>
+              <div class="pipeline-item">2. Sincronizare facturi emise și primite</div>
+              <div class="pipeline-item">3. Validare XML și CIUS-RO</div>
+              <div class="pipeline-item">4. Analiză fiscală RAG pe Art. 298 Cod Fiscal (iLegis)</div>
+              <div class="pipeline-item">5. Human-in-the-Loop: aprobare și export</div>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nr. Factură</th>
+                  <th>Furnizor</th>
+                  <th>Valoare</th>
+                  <th>TVA</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="invoiceTbody"></tbody>
+            </table>
+          </div>
+
+          <div class="grid-2">
+            <article class="analysis">
+              <h3>Panou analiză fiscală</h3>
+              <p id="analysisText" class="text-muted">
+                Pregătit pentru verificare fiscală automată pe baza legislației la zi.
+              </p>
+              <h3 style="margin-top: 1rem">Interogare iLegis</h3>
+              <label class="label" for="legalQueryInput">Întrebare legislativă</label>
+              <input
+                id="legalQueryInput"
+                type="text"
+                maxlength="180"
+                placeholder="Ex: Cum aplic Art. 298 pentru vehicule folosite mixt?"
+              />
+              <div class="actions" style="margin-top: 0.55rem">
+                <button id="legalQueryBtn" class="btn">Caută în iLegis</button>
+              </div>
+              <p id="legalAnswer" class="text-muted" style="margin-top: 0.65rem"></p>
+            </article>
+
+            <article class="analysis">
+              <h3>Upload documente</h3>
+              <div id="uploadZone" class="upload-zone" role="button" tabindex="0" aria-label="Încarcă documente">
+                <p>Trage fișiere aici sau click pentru selectare<br /><small>(PDF, DOCX, XML)</small></p>
+              </div>
+              <input id="uploadInput" type="file" accept=".pdf,.docx,.xml" multiple hidden />
+              <p id="uploadResult" class="text-muted" style="margin-top: 0.65rem"></p>
+
+              <h3 style="margin-top: 1rem">Jurnal live</h3>
+              <ul id="liveLog" class="log-list">
+                <li>Ready: alege tenantul și rulează demo-ul automat.</li>
+              </ul>
+            </article>
+          </div>
+        </section>
+      </section>
+
+      <div id="approvalModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="approvalTitle">
+        <div class="modal-card">
+          <h2 id="approvalTitle">Validare Human-in-the-Loop</h2>
+          <p class="text-muted">
+            Sistemul a terminat analiza fiscală și recomandă deducere TVA limitată pentru factura de vehicule cu
+            utilizare mixtă. Confirmi exportul în contabilitate?
+          </p>
+          <div class="modal-actions">
+            <button id="closeModalBtn" class="btn">Revizuiesc înainte</button>
+            <button id="approveExportBtn" class="btn btn-primary">Aprobă și Exportă în Contabilitate</button>
+          </div>
+        </div>
+      </div>
+
+      <footer class="site-footer">
+        <div class="footer-row">
+          <span>Demo UI Prototype • Orixas.app</span>
+          <nav class="footer-links" aria-label="Linkuri legale">
+            <a href="privacy.html">Privacy Policy</a>
+            <a href="terms.html">Terms</a>
+            <a href="cookies.html">Cookies</a>
+          </nav>
+        </div>
+      </footer>
+    </main>
+
+    <script src="assets/js/main.js"></script>
+    <script src="assets/js/mock-api.js"></script>
+    <script src="assets/js/app-demo.js"></script>
+  </body>
+</html>

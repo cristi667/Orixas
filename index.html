@@ -1,472 +1,151 @@
-<!DOCTYPE html>
-<html lang="ro" class="scroll-smooth">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="color-scheme" content="dark">
-<title>Orixas | Infrastructură autonomă pentru contabilitate și conformitate fiscală</title>
-<meta name="description" content="Agenți AI autonomi pentru contabilitate din România: e-Factura/SPV și RAG pe legislația fiscală.">
-
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.tailwindcss.com/3.4.17"></script>
-<script>
-  tailwind.config = {
-    theme: { extend: { fontFamily: {
-      sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-      mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace']
-    } } }
-  };
-</script>
-<style type="text/tailwindcss">
-  @layer components {
-    .sec   { @apply border-t border-slate-800/70; }
-    .grid12{ @apply mx-auto grid max-w-6xl gap-10 px-5 py-20 md:grid-cols-12 md:gap-12 md:py-28; }
-    .side  { @apply md:col-span-4 md:sticky md:top-24 md:self-start; }
-    .main  { @apply md:col-span-8; }
-    .h2    { @apply text-2xl font-semibold tracking-tight text-white; }
-    .lead  { @apply mt-3 max-w-xs text-sm leading-relaxed text-slate-400; }
-    .spec > div { @apply flex justify-between gap-6 border-b border-slate-800/60 py-2.5 font-mono text-xs last:border-b-0; }
-    .spec dt { @apply shrink-0 text-slate-500; }
-    .spec dd { @apply text-right text-slate-300; }
-    .lbl { @apply mb-2 block text-sm font-medium text-slate-200; }
-    .inp { @apply w-full rounded-md border border-slate-800 bg-slate-900/40 px-3 py-2.5 text-sm text-white placeholder-slate-600 outline-none focus:border-slate-400; }
-    .dlg { @apply m-auto w-[calc(100%-2rem)] max-w-xl overflow-hidden rounded-md border border-slate-800 bg-slate-950 p-0 text-slate-300 backdrop:bg-black/70; }
-    .dlg-in { @apply flex max-h-[85vh] flex-col; }
-    .dlg-bar { @apply flex items-start justify-between gap-6 border-b border-slate-800/70 px-6 py-4; }
-    .dlg-end { @apply flex justify-end border-t border-slate-800/70 px-6 py-4; }
-    .legal { @apply overflow-y-auto px-6 py-6; }
-    .legal h3 { @apply mb-2 mt-7 text-sm font-medium text-white first:mt-0; }
-    .legal p, .legal li { @apply text-sm leading-relaxed text-slate-400; }
-    .legal p { @apply mb-3; }
-    .legal ul { @apply mb-3 list-disc space-y-1.5 pl-5 marker:text-slate-600; }
-    .legal strong { @apply font-medium text-slate-200; }
-    .legal button { @apply text-slate-200 underline decoration-slate-600 underline-offset-4 hover:decoration-slate-300; }
-  }
-</style>
-</head>
-
-<body class="bg-slate-950 font-sans text-slate-300 antialiased">
-
-<!-- Navigare -->
-<header class="sticky top-0 z-20 border-b border-slate-800/70 bg-slate-950/90 backdrop-blur">
-  <div class="mx-auto flex h-14 max-w-6xl items-center justify-between px-5">
-    <!-- LOGO-UL SVG AICI -->
-    <a href="#" class="flex items-center">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 190 48" width="130" height="33" role="img" aria-label="Orixas" style="color:#FAFAFA">
-        <title>Orixas</title>
-        <defs>
-          <linearGradient id="ox-flow" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0" stop-color="#22D3EE"/>
-            <stop offset="1" stop-color="#3B82F6"/>
-          </linearGradient>
-          <radialGradient id="ox-glow">
-            <stop offset="0" stop-color="#22D3EE" stop-opacity=".45"/>
-            <stop offset="1" stop-color="#22D3EE" stop-opacity="0"/>
-          </radialGradient>
-        </defs>
-
-        <g fill="none" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M13.27 33 A14 14 0 1 0 13.27 15" stroke="currentColor" stroke-width="3.5"/>
-          <path d="M3 15 H7 L21 24" stroke="url(#ox-flow)" stroke-width="1.6" opacity=".5"/>
-          <path d="M3 33 H7 L21 24" stroke="url(#ox-flow)" stroke-width="1.6" opacity=".5"/>
-          <path d="M3 24 H21" stroke="url(#ox-flow)" stroke-width="2.4"/>
-        </g>
-        <circle cx="24" cy="24" r="8" fill="url(#ox-glow)"/>
-        <circle cx="24" cy="24" r="3.4" fill="#22D3EE"/>
-
-        <text x="62" y="34" fill="currentColor"
-              font-family="'Geist','Inter','SF Pro Display','Helvetica Neue',Arial,sans-serif"
-              font-size="33" font-weight="600" letter-spacing="-0.8">orixas</text>
-      </svg>
-    </a>
-
-    <nav class="hidden gap-8 text-sm text-slate-400 md:flex" aria-label="Principal">
-      <a href="#arhitectura" class="hover:text-white">Arhitectură</a>
-      <a href="#fondatori" class="hover:text-white">Founder Bundle</a>
-      <a href="#faq" class="hover:text-white">FAQ</a>
-    </nav>
-    <a href="#waitlist" class="rounded-md border border-slate-700 px-3 py-1.5 text-sm text-slate-200 hover:border-slate-500 hover:text-white">Waitlist</a>
-  </div>
-</header>
-
-<main>
-
-<!-- Hero -->
-<section class="mx-auto max-w-6xl px-5 pb-20 pt-20 sm:pt-28 md:pb-28">
-  <h1 class="max-w-3xl text-4xl font-semibold leading-[1.1] tracking-tight text-white sm:text-5xl lg:text-6xl">
-    Infrastructură autonomă pentru contabilitate și conformitate fiscală în România.
-  </h1>
-  <p class="mt-6 max-w-2xl text-base leading-relaxed text-slate-400 sm:text-lg">
-    Agenți AI care raționează peste un pipeline RAG construit pe legislația națională și procesează facturile direct din e-Factura/SPV: parsare UBL/XML, validare de schemă ANAF și răspunsuri ancorate în text normativ citabil.
-  </p>
-  <div class="mt-10 flex flex-wrap items-center gap-x-8 gap-y-4">
-    <a href="#waitlist" class="rounded-md bg-white px-5 py-2.5 text-sm font-medium text-slate-950 hover:bg-slate-200">Intră pe lista de așteptare</a>
-    <a href="#arhitectura" class="text-sm text-slate-400 underline decoration-slate-700 underline-offset-4 hover:text-white hover:decoration-slate-400">Citește specificațiile tehnice</a>
-  </div>
-
-  <pre class="mt-16 overflow-x-auto rounded-md border border-slate-800 bg-slate-900/40 p-5 font-mono text-[13px] leading-6 text-slate-400" aria-label="Exemplu de execuție a pipeline-ului"><code>orixas run --tenant acme-srl
-
-ingest   Monitorul Oficial, Cod Fiscal     index vectorial actualizat
-parse    factura-0142.xml (UBL 2.1)        structură normalizată
-validate schemă ANAF, CIUS-RO              valid
-reason   încadrare fiscală + articole      răspuns cu surse citabile</code></pre>
-</section>
-
-<!-- Arhitectura -->
-<section id="arhitectura" class="sec">
-  <div class="grid12">
-    <div class="side">
-      <h2 class="h2">Arhitectură</h2>
-      <p class="lead">Trei componente independente, fiecare cu garanții care pot fi verificate.</p>
-    </div>
-    <div class="main divide-y divide-slate-800/70 border-y border-slate-800/70">
-
-      <article class="grid gap-6 py-8 lg:grid-cols-2">
-        <div>
-          <h3 class="text-base font-medium text-white">Legal RAG Pipeline (iLegis)</h3>
-          <p class="mt-2 text-sm leading-relaxed text-slate-400">Monitorul Oficial și Codul Fiscal sunt indexate în baze vectoriale. Agenții citesc textul normativ în vigoare și răspund doar pe baza lui, pentru acuratețe deterministă.</p>
-        </div>
-        <dl class="spec">
-          <div><dt>Surse</dt><dd>Monitorul Oficial, Cod Fiscal</dd></div>
-          <div><dt>Index</dt><dd>bază vectorială</dd></div>
-          <div><dt>Răspuns</dt><dd>ancorat în textul normativ</dd></div>
-          <div><dt>Citare</dt><dd>articol și alineat</dd></div>
-        </dl>
-      </article>
-
-      <article class="grid gap-6 py-8 lg:grid-cols-2">
-        <div>
-          <h3 class="text-base font-medium text-white">e-Factura &amp; SPV Engine</h3>
-          <p class="mt-2 text-sm leading-relaxed text-slate-400">Parsare UBL/XML, validare de schemă ANAF și handshaking securizat cu SPV. Facturile ajung în contabilitate ca date structurate, nu ca fișiere.</p>
-        </div>
-        <dl class="spec">
-          <div><dt>Format</dt><dd>UBL 2.1 / XML</dd></div>
-          <div><dt>Validare</dt><dd>schemă ANAF, CIUS-RO</dd></div>
-          <div><dt>Canal</dt><dd>SPV, handshake securizat</dd></div>
-          <div><dt>Ieșire</dt><dd>date normalizate</dd></div>
-        </dl>
-      </article>
-
-      <article class="grid gap-6 py-8 lg:grid-cols-2">
-        <div>
-          <h3 class="text-base font-medium text-white">Multi-Tenant Data Isolation</h3>
-          <p class="mt-2 text-sm leading-relaxed text-slate-400">Izolarea se aplică în baza de date prin Row Level Security (RLS), nu în codul aplicației. Datele financiare ale unui client nu sunt vizibile pentru altul.</p>
-        </div>
-        <dl class="spec">
-          <div><dt>Mecanism</dt><dd>Row Level Security</dd></div>
-          <div><dt>Cheie</dt><dd>tenant_id pe fiecare rând</dd></div>
-          <div><dt>Aplicare</dt><dd>politici la nivel de bază de date</dd></div>
-          <div><dt>Acces între tenanți</dt><dd>blocat implicit</dd></div>
-        </dl>
-      </article>
-
-    </div>
-  </div>
-</section>
-
-<!-- Founder Bundle -->
-<section id="fondatori" class="sec">
-  <div class="grid12">
-    <div class="side">
-      <h2 class="h2">Founder Bundle</h2>
-      <p class="lead">Rezervat pentru primii 20 de antreprenori care intră în platformă.</p>
-    </div>
-    <div class="main">
-      <dl class="spec rounded-md border border-slate-800 px-5">
-        <div><dt>Locuri</dt><dd>20</dd></div>
-        <div><dt>Preț Founder</dt><dd>100 € / lună</dd></div>
-        <div><dt>Valabilitate</dt><dd>pe viață, preț fix</dd></div>
-        <div><dt>Preț standard</dt><dd>anunțat la lansarea publică</dd></div>
-        <div><dt>Acces</dt><dd>timpuriu, la fiecare modul nou</dd></div>
-      </dl>
-      <p class="mt-8 max-w-xl text-sm leading-relaxed text-slate-400">
-        <span class="font-medium text-slate-200">Build in Public.</span>
-        Construim Orixas în deschis: deciziile de arhitectură, roadmap-ul și prioritățile se discută cu fondatorii. Prețul tău rămâne la 100 € pe lună, indiferent cât va costa planul standard după lansare.
-      </p>
-      <a href="#waitlist" class="mt-6 inline-block text-sm text-slate-200 underline decoration-slate-700 underline-offset-4 hover:decoration-slate-400">Rezervă un loc</a>
-    </div>
-  </div>
-</section>
-
-<!-- Waitlist -->
-<section id="waitlist" class="sec">
-  <div class="grid12">
-    <div class="side">
-      <h2 class="h2">Waitlist</h2>
-      <p class="lead">Completează cele trei câmpuri. Revenim prin e-mail cu pașii de acces.</p>
-    </div>
-    <div class="main max-w-xl">
-      <form id="wl" class="space-y-5">
-        <div>
-          <label for="nume" class="lbl">Nume</label>
-          <input id="nume" name="nume" type="text" required autocomplete="name" class="inp" placeholder="Prenume Nume">
-        </div>
-        <div>
-          <label for="email" class="lbl">E-mail de companie</label>
-          <input id="email" name="email" type="email" required autocomplete="email" class="inp" placeholder="nume@companie.ro">
-        </div>
-        <div>
-          <label for="cui" class="lbl">CUI / Companie</label>
-          <input id="cui" name="cui" type="text" required autocomplete="organization" class="inp" placeholder="RO12345678 sau denumirea firmei">
-        </div>
-        <button type="submit" class="rounded-md bg-white px-5 py-2.5 text-sm font-medium text-slate-950 hover:bg-slate-200">Cere acces</button>
-        <p class="text-xs leading-relaxed text-slate-500">Folosim datele doar pentru această cerere. Le poți șterge oricând, la cerere.</p>
-      </form>
-
-      <div id="ok" hidden role="status" aria-live="polite" class="rounded-md border border-slate-800 p-6">
-        <p class="text-base font-medium text-white">Cerere înregistrată.</p>
-        <p class="mt-2 text-sm leading-relaxed text-slate-400">Am salvat cererea pentru <span id="okmail" class="font-mono text-slate-200"></span>. Te contactăm când se eliberează un loc în Founder Bundle.</p>
+<!doctype html>
+<html lang="ro">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Orixas.app: Asistent AI pentru e-Factura, SPV și legislație fiscal-juridică."
+    />
+    <title>Orixas.app | Financiar Azi, Juridic Mâine</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="assets/css/styles.css" />
+  </head>
+  <body>
+    <header class="page-header">
+      <div class="container navbar">
+        <a class="brand" href="index.html">Orixas<span>.app</span></a>
+        <button id="navToggle" class="nav-toggle" aria-label="Deschide meniu" aria-expanded="false">
+          ☰
+        </button>
+        <nav id="navLinks" class="nav-links" aria-label="Navigație principală">
+          <a class="nav-link" data-page="index.html" href="index.html">Acasă</a>
+          <a class="nav-link" data-page="app.html" href="app.html">Demo Live</a>
+          <a class="nav-link" data-page="pricing.html" href="pricing.html">Pricing</a>
+          <a class="nav-link" data-page="faq.html" href="faq.html">FAQ</a>
+          <a class="nav-link" data-page="arhitectura.html" href="arhitectura.html">Tehnologie</a>
+          <a class="nav-cta" href="auth.html">Rezervă Founder</a>
+        </nav>
       </div>
-    </div>
-  </div>
-</section>
+    </header>
 
-<!-- FAQ -->
-<section id="faq" class="sec">
-  <div class="grid12">
-    <div class="side">
-      <h2 class="h2">Întrebări frecvente</h2>
-      <p class="lead">Răspunsuri directe despre date, securitate și acuratețe.</p>
-    </div>
-    <div class="main divide-y divide-slate-800/70 border-y border-slate-800/70">
+    <main class="container">
+      <section class="hero">
+        <article class="hero-copy reveal">
+          <span class="eyebrow">Pentru antreprenori și contabili ocupați</span>
+          <h1>Asistentul tău pentru e-Factura, SPV și legislația fiscal-juridică</h1>
+          <p class="text-muted">
+            Orixas aduce într-un singur loc facturile din SPV, verifică dacă sunt corecte și îți explică ce decizie
+            fiscală trebuie luată, în limbaj clar. Tu validezi finalul, noi facem munca grea.
+          </p>
+          <div class="actions">
+            <a class="btn btn-primary" href="app.html">Vezi Demo Live</a>
+            <a class="btn" href="arhitectura.html">Cum protejăm datele per CUI</a>
+          </div>
+          <div class="kpi-row">
+            <div class="kpi">
+              <strong class="mono">SPV + CIUS-RO</strong>
+              <span class="text-muted">Facturi sincronizate și validate înainte de export</span>
+            </div>
+            <div class="kpi">
+              <strong class="mono">RAG Legal</strong>
+              <span class="text-muted">Încadrare TVA pe baza legii la zi din iLegis</span>
+            </div>
+            <div class="kpi">
+              <strong class="mono">Human-in-the-Loop</strong>
+              <span class="text-muted">Nicio acțiune oficială fără aprobarea ta explicită</span>
+            </div>
+          </div>
+        </article>
 
-      <details class="group py-5">
-        <summary class="flex cursor-pointer list-none items-center justify-between gap-6 text-[15px] font-medium text-white [&::-webkit-details-marker]:hidden">
-          Este Orixas conform GDPR?
-          <span class="font-mono text-slate-500 group-open:hidden" aria-hidden="true">+</span>
-          <span class="hidden font-mono text-slate-500 group-open:inline" aria-hidden="true">−</span>
-        </summary>
-        <p class="mt-3 max-w-2xl text-sm leading-relaxed text-slate-400">Clientul rămâne operator de date, iar Orixas acționează ca împuternicit conform art. 28 GDPR. Încheiem un acord de prelucrare (DPA), procesăm doar datele necesare serviciului și poți cere exportul sau ștergerea lor oricând.</p>
-      </details>
+        <aside class="hero-preview reveal delay-1">
+          <h2>Preview interactiv</h2>
+          <p class="text-muted">Flux real de lucru: SPV, verificare fiscală, aprobare și export.</p>
+          <div class="preview-window">
+            <div class="preview-top">
+              <span class="dot"></span>
+              <span class="dot"></span>
+              <span class="dot"></span>
+            </div>
+            <div class="preview-content">
+              <div class="fake-line accent" style="width: 78%"></div>
+              <div class="fake-line" style="width: 96%"></div>
+              <div class="fake-line" style="width: 84%"></div>
+              <div class="fake-line accent" style="width: 70%"></div>
+              <div class="fake-line" style="width: 92%"></div>
+            </div>
+          </div>
+          <div class="actions">
+            <a class="btn btn-primary" href="app.html">Rulează Simularea</a>
+          </div>
+        </aside>
+      </section>
 
-      <details class="group py-5">
-        <summary class="flex cursor-pointer list-none items-center justify-between gap-6 text-[15px] font-medium text-white [&::-webkit-details-marker]:hidden">
-          Unde sunt stocate datele?
-          <span class="font-mono text-slate-500 group-open:hidden" aria-hidden="true">+</span>
-          <span class="hidden font-mono text-slate-500 group-open:inline" aria-hidden="true">−</span>
-        </summary>
-        <p class="mt-3 max-w-2xl text-sm leading-relaxed text-slate-400">Pe infrastructură găzduită în Uniunea Europeană. Datele sunt criptate în tranzit (TLS) și la repaus, iar credențialele de acces la SPV sunt stocate separat și criptat, per tenant.</p>
-      </details>
+      <section class="section grid-2">
+        <article class="card reveal delay-1">
+          <h2>Viziune Multi-Agent: Financiar acum, Juridic imediat după</h2>
+          <p class="text-muted">
+            Lansăm întâi Agentul Financiar, unde impactul este imediat: facturi procesate corect, risc fiscal redus și
+            timp salvat. Același motor legal, aceeași memorie pe CUI și aceeași validare umană deschid direct drumul
+            către Agentul Juridic.
+          </p>
+          <p class="text-muted">
+            Pe scurt: ce înveți și validezi azi în zona financiară devine baza pentru contracte și audit juridic mâine,
+            fără să o iei de la zero.
+          </p>
+        </article>
 
-      <details class="group py-5">
-        <summary class="flex cursor-pointer list-none items-center justify-between gap-6 text-[15px] font-medium text-white [&::-webkit-details-marker]:hidden">
-          Cum sunt izolate datele între clienți?
-          <span class="font-mono text-slate-500 group-open:hidden" aria-hidden="true">+</span>
-          <span class="hidden font-mono text-slate-500 group-open:inline" aria-hidden="true">−</span>
-        </summary>
-        <p class="mt-3 max-w-2xl text-sm leading-relaxed text-slate-400">Fiecare rând poartă un identificator de tenant, iar politicile RLS sunt aplicate de baza de date. O interogare nu poate returna date din alt tenant, nici dacă aplicația are o eroare de logică.</p>
-      </details>
+        <article class="card offer-card reveal delay-2">
+          <div>
+            <span class="eyebrow">Founder Bundle</span>
+            <h3>20 de locuri. Acces pe viață la toate modulele.</h3>
+            <p class="text-muted">Plătești o singură taxă lunară și rămâi cu același plan pe măsură ce lansăm noi agenți.</p>
+            <ul class="small-list">
+              <li>100 EUR/lună pe viață</li>
+              <li>Include Agentul Financiar și Agentul Juridic la lansare</li>
+              <li>Memorie dedicată per CUI + suport prioritar</li>
+            </ul>
+          </div>
+          <div>
+            <div class="price mono">100 EUR <small>/ lună</small></div>
+            <p class="mono text-muted">Locuri rămase: 20</p>
+            <a class="btn btn-primary" href="auth.html">Rezervă acum</a>
+          </div>
+        </article>
+      </section>
 
-      <details class="group py-5">
-        <summary class="flex cursor-pointer list-none items-center justify-between gap-6 text-[15px] font-medium text-white [&::-webkit-details-marker]:hidden">
-          Datele mele sunt folosite pentru antrenarea modelelor?
-          <span class="font-mono text-slate-500 group-open:hidden" aria-hidden="true">+</span>
-          <span class="hidden font-mono text-slate-500 group-open:inline" aria-hidden="true">−</span>
-        </summary>
-        <p class="mt-3 max-w-2xl text-sm leading-relaxed text-slate-400">Nu. Datele clienților nu antrenează și nu ajustează niciun model. Indexul legislativ se construiește exclusiv din surse publice: Monitorul Oficial și Codul Fiscal.</p>
-      </details>
+      <section class="section grid-3">
+        <article class="card">
+          <h3>1. Conectezi SPV</h3>
+          <p class="text-muted">Alegi firma prin CUI și sincronizezi facturile emise/primite din SPV ANAF.</p>
+        </article>
+        <article class="card">
+          <h3>2. Verifici fiscal cu legea la zi</h3>
+          <p class="text-muted">Primești explicații clare bazate pe articole legale, nu pe presupuneri.</p>
+        </article>
+        <article class="card">
+          <h3>3. Aprobi și exporți</h3>
+          <p class="text-muted">Tu decizi finalul prin validare umană înainte de trimiterea în contabilitate.</p>
+        </article>
+      </section>
 
-      <details class="group py-5">
-        <summary class="flex cursor-pointer list-none items-center justify-between gap-6 text-[15px] font-medium text-white [&::-webkit-details-marker]:hidden">
-          Cum evitați răspunsurile greșite?
-          <span class="font-mono text-slate-500 group-open:hidden" aria-hidden="true">+</span>
-          <span class="hidden font-mono text-slate-500 group-open:inline" aria-hidden="true">−</span>
-        </summary>
-        <p class="mt-3 max-w-2xl text-sm leading-relaxed text-slate-400">Fiecare răspuns se bazează pe texte indexate și vine cu citarea articolului. Dacă agentul nu găsește o sursă, nu improvizează: marchează cazul pentru verificare de către un contabil.</p>
-      </details>
+      <footer class="site-footer">
+        <div class="footer-row">
+          <span>Orixas.app • Platformă B2B SaaS pentru conformitate fiscală și juridică</span>
+          <nav class="footer-links" aria-label="Linkuri legale">
+            <a href="privacy.html">Privacy Policy</a>
+            <a href="terms.html">Terms</a>
+            <a href="cookies.html">Cookies</a>
+          </nav>
+        </div>
+      </footer>
+    </main>
 
-    </div>
-  </div>
-</section>
-
-</main>
-
-<!-- Footer -->
-<footer class="border-t border-slate-800/70">
-  <div class="mx-auto flex max-w-6xl flex-col gap-6 px-5 py-10 text-sm text-slate-500 md:flex-row md:items-center md:justify-between">
-    <p><span class="font-mono text-slate-300">orixas</span> &nbsp; © 2026 Orixas. Toate drepturile rezervate.</p>
-    <nav class="flex gap-6" aria-label="Footer">
-      <button type="button" data-open="terms" aria-haspopup="dialog" class="hover:text-slate-300">Termeni</button>
-      <button type="button" data-open="privacy" aria-haspopup="dialog" class="hover:text-slate-300">Confidențialitate</button>
-      <a href="mailto:contact@orixas.ro" class="hover:text-slate-300">Contact</a>
-    </nav>
-  </div>
-</footer>
-
-<!-- Modal: Termeni și Condiții -->
-<dialog id="modal-terms" class="dlg" aria-labelledby="terms-title">
-  <div class="dlg-in">
-    <div class="dlg-bar">
-      <div>
-        <h2 id="terms-title" class="text-base font-semibold text-white">Termeni și Condiții Orixas</h2>
-        <p class="mt-1 font-mono text-xs text-slate-500">Ultima actualizare: 14 noiembrie 2026</p>
-      </div>
-      <button type="button" data-close aria-label="Închide" class="-mr-2 -mt-1 rounded p-2 text-slate-500 hover:text-white">
-        <svg class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13"/></svg>
-      </button>
-    </div>
-    <div class="legal">
-      <h3>1. Părți și domeniu de aplicare</h3>
-      <p>Acești termeni reglementează utilizarea platformei Orixas („Serviciul”), furnizată de [denumirea societății], CUI [CUI] („Orixas”). Serviciul se adresează exclusiv profesioniștilor și persoanelor juridice (B2B). Prin crearea unui cont sau prin utilizarea Serviciului, reprezentantul companiei acceptă acești termeni în numele acesteia.</p>
-
-      <h3>2. Serviciul</h3>
-      <p>Orixas oferă agenți AI pentru asistență în contabilitate: interogarea legislației fiscale indexate (iLegis), parsarea și validarea facturilor e-Factura/SPV și organizarea datelor contabile. Funcționalitățile pot evolua, iar modificările importante sunt comunicate în prealabil.</p>
-
-      <h3>3. Cont și utilizare acceptabilă</h3>
-      <ul>
-        <li>Utilizatorul păstrează confidențialitatea credențialelor și răspunde pentru activitatea din contul său.</li>
-        <li>Este interzisă accesarea datelor altor clienți, ocolirea măsurilor de securitate sau încărcarea documentelor la care utilizatorul nu are drept de acces.</li>
-        <li>Orixas poate suspenda conturile care încalcă acești termeni sau care pun în pericol securitatea platformei.</li>
-      </ul>
-
-      <h3>4. Founder Bundle</h3>
-      <p>Founder Bundle este oferta rezervată primilor 20 de antreprenori admiși în platformă:</p>
-      <ul>
-        <li><strong>Preț:</strong> 100 € pe lună, la care se adaugă TVA, dacă legea o impune.</li>
-        <li><strong>Pe viață:</strong> prețul rămâne fix și nu crește la introducerea prețului standard sau a unor planuri noi, cât timp contul este activ și plățile sunt la zi.</li>
-        <li><strong>Locuri:</strong> 20 în total, confirmate în scris de Orixas după înscrierea pe waitlist.</li>
-        <li><strong>Titular:</strong> statutul aparține companiei înscrise și nu poate fi transferat altei entități fără acordul scris al Orixas.</li>
-        <li><strong>Build in Public:</strong> fondatorii primesc acces timpuriu la modulele noi și pot trimite feedback direct. Feedbackul nu creează obligații pentru Orixas.</li>
-      </ul>
-
-      <h3>5. Rol consultativ și decizia fiscală</h3>
-      <p>Răspunsurile, clasificările și sugestiile generate de agenții AI au rol exclusiv consultativ și informativ. Ele nu constituie consultanță fiscală, contabilă sau juridică și nu înlocuiesc judecata unui profesionist.</p>
-      <p>Decizia fiscală, precum și întocmirea, verificarea și depunerea oricărei declarații sau document, aparțin în exclusivitate contabilului și utilizatorului, care răspund pentru conținutul lor. Utilizatorul trebuie să verifice rezultatele înainte de a le folosi, inclusiv citările din legislație.</p>
-
-      <h3>6. Limitarea răspunderii</h3>
-      <p>În măsura permisă de lege, Orixas nu răspunde pentru decizii luate sau acte depuse pe baza rezultatelor generate de AI, nici pentru amenzi, majorări, penalități sau pierderi indirecte (profit nerealizat, oportunități pierdute). Răspunderea totală a Orixas față de utilizator este limitată la sumele plătite de acesta în ultimele 12 luni.</p>
-      <p>Nicio clauză nu exclude răspunderea pentru dol sau culpă gravă ori în alte situații în care legea interzice limitarea. Serviciul este furnizat „ca atare”: Orixas depune diligențe rezonabile pentru disponibilitate, dar nu garantează funcționare neîntreruptă sau lipsa erorilor, inclusiv a celor provenite din surse externe, cum ar fi indisponibilitatea SPV.</p>
-
-      <h3>7. Date și confidențialitate</h3>
-      <p>Prelucrarea datelor personale este descrisă în <button type="button" data-open="privacy">Politica de Confidențialitate</button>. Datele încărcate de utilizator rămân ale acestuia, iar Orixas le folosește doar pentru a furniza Serviciul.</p>
-
-      <h3>8. Proprietate intelectuală</h3>
-      <p>Platforma, codul și indexul legislativ organizat rămân proprietatea Orixas. Utilizatorul primește un drept limitat, neexclusiv și netransferabil de utilizare pe durata contractului. Documentele și datele încărcate rămân proprietatea utilizatorului.</p>
-
-      <h3>9. Durată și încetare</h3>
-      <p>Contractul se încheie pe durată nedeterminată și poate fi reziliat de oricare parte, prin notificare scrisă, la sfârșitul perioadei de facturare în curs. La încetare, utilizatorul își poate exporta datele într-un termen rezonabil, după care acestea sunt șterse, cu excepția celor pe care legea ne obligă să le păstrăm.</p>
-
-      <h3>10. Modificări, lege aplicabilă și litigii</h3>
-      <p>Orixas poate actualiza acești termeni, cu notificare prealabilă; condițiile de preț ale Founder Bundle nu se modifică în detrimentul fondatorilor. Termenii sunt guvernați de legea română. Litigiile se soluționează amiabil, iar în caz contrar de instanțele competente de la sediul Orixas.</p>
-
-      <h3>11. Contact</h3>
-      <p>Întrebări despre acești termeni: cristiansabaupopa@orixas.app.</p>
-    </div>
-    <div class="dlg-end">
-      <button type="button" data-close class="rounded-md border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:border-slate-500 hover:text-white">Închide</button>
-    </div>
-  </div>
-</dialog>
-
-<!-- Modal: Politica de Confidențialitate -->
-<dialog id="modal-privacy" class="dlg" aria-labelledby="privacy-title">
-  <div class="dlg-in">
-    <div class="dlg-bar">
-      <div>
-        <h2 id="privacy-title" class="text-base font-semibold text-white">Politica de Confidențialitate și GDPR</h2>
-        <p class="mt-1 font-mono text-xs text-slate-500">Ultima actualizare: 14 noiembrie 2026</p>
-      </div>
-      <button type="button" data-close aria-label="Închide" class="-mr-2 -mt-1 rounded p-2 text-slate-500 hover:text-white">
-        <svg class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13"/></svg>
-      </button>
-    </div>
-    <div class="legal">
-      <h3>1. Rolurile Orixas în prelucrarea datelor</h3>
-      <p>Orixas ([denumirea societății], CUI [CUI]) prelucrează date în două roluri. Pentru datele de pe waitlist (nume, e-mail de companie, CUI/companie), Orixas este operator. Pentru datele clienților încărcate în platformă (facturi, documente contabile, date din SPV), clientul este operator, iar Orixas acționează ca împuternicit conform art. 28 GDPR, pe baza unui acord de prelucrare (DPA).</p>
-
-      <h3>2. Ce date prelucrăm și de ce</h3>
-      <ul>
-        <li><strong>Waitlist:</strong> pentru a răspunde cererii de acces și a comunica despre Founder Bundle, în temeiul art. 6 alin. (1) lit. b) GDPR.</li>
-        <li><strong>Cont:</strong> date de autentificare și de facturare, necesare furnizării Serviciului.</li>
-        <li><strong>Date contabile ale clientului:</strong> exclusiv pentru funcțiile Serviciului și conform instrucțiunilor clientului.</li>
-      </ul>
-
-      <h3>3. Stocare în Uniunea Europeană</h3>
-      <p>Datele sunt stocate pe infrastructură găzduită în Uniunea Europeană. Izolarea dintre clienți se aplică în baza de date prin Row Level Security (RLS), astfel încât datele unui client nu pot fi citite de altul.</p>
-
-      <h3>4. Criptare și securitate</h3>
-      <ul>
-        <li>Datele sunt criptate în tranzit (TLS) și la repaus.</li>
-        <li>Accesul intern este limitat la personalul autorizat, pe principiul accesului minim necesar.</li>
-        <li>Credențialele și tokenurile SPV sunt stocate criptat, izolate per tenant, și pot fi revocate oricând. Comunicarea cu SPV folosește canale securizate, iar fișierele e-Factura sunt validate față de schema ANAF.</li>
-      </ul>
-
-      <h3>5. Antrenarea modelelor de AI</h3>
-      <p><strong>Datele clienților nu sunt folosite niciodată pentru antrenarea sau ajustarea modelelor de inteligență artificială.</strong> Orixas nu folosește și nu permite folosirea acestor date în acest scop. Indexul legislativ iLegis se construiește exclusiv din surse publice: Monitorul Oficial și Codul Fiscal.</p>
-
-      <h3>6. Furnizori și transferuri</h3>
-      <p>Folosim furnizori de infrastructură și de procesare AI doar pe baza unor acorduri de prelucrare și în condiții care asigură nivelul de protecție cerut de GDPR. Datele nu sunt transferate în afara Spațiului Economic European fără garanțiile prevăzute de lege.</p>
-
-      <h3>7. Păstrarea datelor</h3>
-      <p>Păstrăm datele cât timp contul este activ și, ulterior, doar cât impune legea sau cât este necesar pentru apărarea unor drepturi. Datele de pe waitlist se șterg la cerere.</p>
-
-      <h3>8. Drepturile tale</h3>
-      <p>Ai dreptul de acces, rectificare, ștergere, restricționare, portabilitate și opoziție. Le poți exercita scriind la contact@orixas.ro; răspundem în termenul legal de o lună. Pentru datele încărcate în platformă, solicitarea se adresează mai întâi operatorului (compania ta), iar Orixas îl sprijină. Poți depune plângere la Autoritatea Națională de Supraveghere a Prelucrării Datelor cu Caracter Personal (ANSPDCP).</p>
-
-      <h3>9. Incidente de securitate</h3>
-      <p>În cazul unei încălcări a securității datelor, notificăm clientul fără întârzieri nejustificate, pentru ca acesta să își poată îndeplini obligațiile legale.</p>
-    </div>
-    <div class="dlg-end">
-      <button type="button" data-close class="rounded-md border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:border-slate-500 hover:text-white">Închide</button>
-    </div>
-  </div>
-</dialog>
-
-<!-- Script pentru Modale -->
-<script>
-  (function () {
-    var down;
-    document.addEventListener('click', function (e) {
-      var t = e.target.closest('[data-open]');
-      if (!t) return;
-      var cur = document.querySelector('dialog[open]');
-      if (cur) cur.close();
-      var d = document.getElementById('modal-' + t.dataset.open);
-      d.querySelector('.legal').scrollTop = 0;
-      d.showModal();
-      document.body.classList.add('overflow-hidden');
-    });
-    document.querySelectorAll('dialog').forEach(function (d) {
-      d.addEventListener('mousedown', function (e) { down = e.target; });
-      d.addEventListener('click', function (e) {
-        if ((e.target === d && down === d) || e.target.closest('[data-close]')) d.close();
-      });
-      d.addEventListener('close', function () {
-        if (!document.querySelector('dialog[open]')) document.body.classList.remove('overflow-hidden');
-      });
-    });
-  })();
-</script>
-
-<!-- Script pentru Supabase / Waitlist -->
-<script>
-  const supabaseUrl = 'https://zaizyyfpzdxvulswmppi.supabase.co';
-  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InphaXp5eWZwemR4dnVsc3dtcHBpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ2Nzg4OTksImV4cCI6MjExMDI1NDg5OX0.HU0puttDYs14aCU150wsR9FedJafHB1oShNGjh4hINc';
-  const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
-
-  document.getElementById('wl').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    const name = document.getElementById('nume').value;
-    const email = document.getElementById('email').value;
-    const cui = document.getElementById('cui').value;
-
-    const { data, error } = await _supabase
-      .from('waitlist')
-      .insert([{ name, email, cui }]);
-
-    if (error) {
-      alert('A apărut o eroare. Te rugăm să încerci din nou.');
-      console.error(error);
-    } else {
-      document.getElementById('okmail').textContent = email;
-      e.target.hidden = true;
-      document.getElementById('ok').hidden = false;
-    }
-  });
-</script>
-</body>
+    <script src="assets/js/main.js"></script>
+  </body>
 </html>

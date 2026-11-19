@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="ro">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Arhitectura tehnică și securitatea Orixas.app." />
+    <title>Orixas.app | Tehnologie & Securitate</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="assets/css/styles.css" />
+  </head>
+  <body>
+    <header class="page-header">
+      <div class="container navbar">
+        <a class="brand" href="index.html">Orixas<span>.app</span></a>
+        <button id="navToggle" class="nav-toggle" aria-label="Deschide meniu" aria-expanded="false">☰</button>
+        <nav id="navLinks" class="nav-links" aria-label="Navigație principală">
+          <a class="nav-link" data-page="index.html" href="index.html">Acasă</a>
+          <a class="nav-link" data-page="app.html" href="app.html">Demo Live</a>
+          <a class="nav-link" data-page="pricing.html" href="pricing.html">Pricing</a>
+          <a class="nav-link" data-page="faq.html" href="faq.html">FAQ</a>
+          <a class="nav-link" data-page="arhitectura.html" href="arhitectura.html">Tehnologie</a>
+          <a class="nav-cta" href="auth.html">Rezervă Founder</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="container">
+      <section class="card reveal">
+        <span class="eyebrow">Transparență tehnică pentru clienți B2B</span>
+        <h1>Arhitectură RAG + securitate enterprise, construită pentru conformitate</h1>
+        <p class="text-muted">
+          Orixas rulează pe infrastructură multi-tenant izolată per CUI, cu fluxuri separate pentru ingestie SPV,
+          validare fiscală și analiză juridică. Datele operaționale rămân segregate logic, iar acțiunile oficiale sunt
+          confirmate exclusiv prin Human-in-the-Loop.
+        </p>
+      </section>
+
+      <section class="section grid-2 reveal delay-1">
+        <article class="card">
+          <h2>Flux SPV ANAF OAuth2</h2>
+          <ol class="small-list">
+            <li>Autentificare OAuth2 cu token-uri scoped per tenant.</li>
+            <li>Sincronizare documente SPV emise/primite pe CUI activ.</li>
+            <li>Normalizare XML și validare CIUS-RO înainte de orice proces fiscal.</li>
+            <li>Jurnal auditabil al fiecărei acțiuni, cu timestamp și operator.</li>
+          </ol>
+        </article>
+
+        <article class="card">
+          <h2>Infrastructură RAG legislativ</h2>
+          <ol class="small-list">
+            <li>Indexare incrementală din iLegis și Monitorul Oficial.</li>
+            <li>Retrieval contextual pe articole fiscale și juridice relevante.</li>
+            <li>Răspuns argumentat cu sursă legală, nu răspuns generic.</li>
+            <li>Același motor deservește Agentul Financiar și Agentul Juridic.</li>
+          </ol>
+        </article>
+      </section>
+
+      <section class="section grid-3 reveal delay-2">
+        <article class="card">
+          <h3>Izolare per CUI</h3>
+          <p class="text-muted">
+            Memorie, istoric și documente stocate în partiții logice separate pentru fiecare firmă. Fără amestec de
+            date între clienți.
+          </p>
+          <p class="mono text-muted">Tenant Key: CUI + OrgID</p>
+        </article>
+        <article class="card">
+          <h3>Protecție date</h3>
+          <p class="text-muted">
+            Criptare în tranzit (TLS) și la stocare, politici stricte de acces și audit trail complet pentru acțiuni
+            critice.
+          </p>
+          <p class="mono text-muted">Transport: TLS 1.2+ • At Rest: AES-256</p>
+        </article>
+        <article class="card">
+          <h3>Control uman obligatoriu</h3>
+          <p class="text-muted">
+            Nicio decizie cu impact contabil sau juridic nu este executată autonom. Operatorul aprobă explicit exportul.
+          </p>
+          <p class="mono text-muted">Policy: Human-in-the-Loop enforced</p>
+        </article>
+      </section>
+
+      <section class="section card">
+        <h2>Blueprint operațional simplificat</h2>
+        <p class="text-muted">Agentul Financiar livrează primul ROI și reduce riscul. Același stack extinde apoi Agentul Juridic.</p>
+        <div class="preview-window" style="margin-top: 0.9rem">
+          <div class="preview-content">
+            <div class="mono">SPV ANAF -> Validare CIUS-RO -> RAG Fiscal -> Human Approval -> Export</div>
+            <div class="mono">RAG comun + memorie per CUI -> Agent Juridic (contracte, audit documente)</div>
+          </div>
+        </div>
+      </section>
+
+      <footer class="site-footer">
+        <div class="footer-row">
+          <span>Orixas.app • Tehnologie &amp; Securitate</span>
+          <nav class="footer-links" aria-label="Linkuri legale">
+            <a href="privacy.html">Privacy Policy</a>
+            <a href="terms.html">Terms</a>
+            <a href="cookies.html">Cookies</a>
+          </nav>
+        </div>
+      </footer>
+    </main>
+
+    <script src="assets/js/main.js"></script>
+  </body>
+</html>
