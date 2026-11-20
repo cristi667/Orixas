@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="ro">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="description" content="Administrare rezervari Founder Bundle Orixas.app." />
+    <title>Orixas.app | Administrare Founder</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="assets/css/styles.css" />
+  </head>
+  <body>
+    <header class="page-header">
+      <div class="container navbar">
+        <a class="brand" href="index.html">Orixas<span>.app</span></a>
+        <button id="navToggle" class="nav-toggle" aria-label="Deschide meniu" aria-expanded="false">☰</button>
+        <nav id="navLinks" class="nav-links" aria-label="Navigație principală">
+          <a class="nav-link" data-page="index.html" href="index.html">Acasă</a>
+          <a class="nav-link" data-page="app.html" href="app.html">Demo Live</a>
+          <a class="nav-link" data-page="pricing.html" href="pricing.html">Pricing</a>
+          <a class="nav-link" data-page="faq.html" href="faq.html">FAQ</a>
+          <a class="nav-link" data-page="arhitectura.html" href="arhitectura.html">Tehnologie</a>
+          <a class="nav-cta" href="auth.html">Rezervă Founder</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="container">
+      <section id="adminLogin" class="auth-shell reveal">
+        <article class="card">
+          <span class="eyebrow">Acces restricționat</span>
+          <h1>Administrare Founder Bundle</h1>
+          <p class="text-muted">
+            Introdu tokenul de administrare configurat pentru acest site. Tokenul este păstrat doar în acest tab și
+            nu este salvat în browser pe termen lung.
+          </p>
+
+          <form id="adminLoginForm" novalidate>
+            <label class="label" for="adminToken">Token administrare</label>
+            <input
+              id="adminToken"
+              name="token"
+              type="password"
+              autocomplete="current-password"
+              maxlength="200"
+              class="mono"
+              placeholder="••••••••••••"
+              required
+            />
+            <div class="actions">
+              <button class="btn btn-primary" type="submit">Intră în panou</button>
+              <a class="btn" href="index.html">Înapoi pe site</a>
+            </div>
+            <p id="adminLoginMessage" class="message" aria-live="polite"></p>
+          </form>
+        </article>
+      </section>
+
+      <section id="adminPanel" class="section reveal" hidden>
+        <article class="card">
+          <div class="toolbar">
+            <div>
+              <span class="eyebrow">Rezervări Founder Bundle</span>
+              <h1 style="margin-bottom: 0.35rem">Conturi și locuri</h1>
+              <p class="text-muted" style="margin-bottom: 0" data-founder-note></p>
+            </div>
+            <div class="actions" style="margin-top: 0">
+              <button id="adminRefresh" class="btn" type="button">Reîncarcă</button>
+              <button id="adminLogout" class="btn" type="button">Ieși din panou</button>
+            </div>
+          </div>
+
+          <div class="kpi-row">
+            <div class="kpi">
+              <strong class="mono" data-founder-taken>0</strong>
+              <span class="text-muted">locuri ocupate</span>
+            </div>
+            <div class="kpi">
+              <strong class="mono" data-founder-remaining>20</strong>
+              <span class="text-muted">locuri rămase</span>
+            </div>
+            <div class="kpi">
+              <strong class="mono"><span data-founder-total>20</span></strong>
+              <span class="text-muted">locuri în program</span>
+            </div>
+            <div class="kpi">
+              <strong class="mono" id="adminCancelled">0</strong>
+              <span class="text-muted">rezervări anulate</span>
+            </div>
+          </div>
+
+          <div class="meter" aria-hidden="true"><span class="meter-fill" data-founder-meter style="width: 0%"></span></div>
+
+          <div class="actions" style="margin-top: 1rem">
+            <label class="label" for="adminSearch" style="margin-bottom: 0; align-self: center">Caută</label>
+            <input
+              id="adminSearch"
+              type="search"
+              placeholder="Nume, email sau CUI"
+              maxlength="120"
+              style="max-width: 320px"
+            />
+            <label class="check-row" for="adminShowCancelled" style="margin: 0">
+              <input id="adminShowCancelled" type="checkbox" />
+              <span>Arată și rezervările anulate</span>
+            </label>
+          </div>
+
+          <p id="adminMessage" class="message" aria-live="polite"></p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Loc</th>
+                  <th>Nume</th>
+                  <th>Email</th>
+                  <th>CUI</th>
+                  <th>Rol</th>
+                  <th>Status</th>
+                  <th>Creat</th>
+                  <th>Acțiune</th>
+                </tr>
+              </thead>
+              <tbody id="adminTbody"></tbody>
+            </table>
+          </div>
+          <p id="adminEmpty" class="text-muted" hidden>Nicio rezervare nu corespunde filtrului.</p>
+        </article>
+      </section>
+
+      <footer class="site-footer">
+        <div class="footer-row">
+          <span>Orixas.app • Administrare</span>
+          <nav class="footer-links" aria-label="Linkuri legale">
+            <a href="privacy.html">Privacy Policy</a>
+            <a href="terms.html">Terms</a>
+            <a href="cookies.html">Cookies</a>
+          </nav>
+        </div>
+      </footer>
+    </main>
+
+    <script src="assets/js/main.js"></script>
+    <script src="assets/js/founder.js"></script>
+    <script src="assets/js/admin.js"></script>
+  </body>
+</html>

@@ -1,11 +1,16 @@
 /**
  * Orixas backend (Cloudflare Worker + D1).
  *
- * Endpoints:
+ * Public:
  *   GET  /api/founder                 -> starea curenta a locurilor Founder
  *   GET  /api/founder/stream          -> Server-Sent Events, emite starea la fiecare schimbare
  *   POST /api/accounts                -> creeaza contul si rezerva atomic un loc Founder
  *   GET  /api/accounts/:id            -> datele publice ale unui cont (fara email complet)
+ *
+ * Administrare (necesita header `Authorization: Bearer <ADMIN_TOKEN>`):
+ *   POST /api/admin/login             -> verifica tokenul
+ *   GET  /api/admin/accounts          -> lista conturilor + statistici
+ *   POST /api/admin/accounts/:id/cancel -> anuleaza rezervarea si elibereaza locul
  *
  * Orice alta ruta este servita din assets (site-ul static).
  */
@@ -13,6 +18,9 @@
 const DEFAULT_TOTAL_SEATS = 20;
 const SEAT_RETRIES = 3;
 const STREAM_INTERVAL_MS = 4000;
+const ADMIN_SEARCH_LIMIT = 500;
+const LOGIN_WINDOW_MS = 10 * 60 * 1000;
+const LOGIN_MAX_ATTEMPTS = 12;
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const NAME_RE = /^[A-Za-z\u00C0-\u024F\u1E00-\u1EFF][A-Za-z0-9\u00C0-\u024F\u1E00-\u1EFF\s\-'.]{2,79}$/;
@@ -85,6 +93,30 @@ function isTrue(value) {
   return value === true || value === 1 || value === "1" || value === "true";
 }
 
+function sleep(ms) {
+  return new Promise(function (resolve) {
+    setTimeout(resolve, ms);
+  });
+}
+
+/** Comparatie in timp constant, ca tokenul sa nu fie ghicit prin timing. */
+function tokensMatch(provided, expected) {
+  const a = new TextEncoder().encode(String(provided || ""));
+  const b = new TextEncoder().encode(String(expected || ""));
+  const length = Math.max(a.length, b.length);
+  let diff = a.length ^ b.length;
+  for (let i = 0; i < length; i += 1) {
+    diff |= (a[i] || 0) ^ (b[i] || 0);
+  }
+  return diff === 0;
+}
+
+function bearerToken(request) {
+  const header = request.headers.get("authorization") || "";
+  const match = header.match(/^Bearer\s+(.+)$/i);
+  return match ? match[1].trim() : "";
+}
+
 /* ------------------------------------------------------------------- schema */
 
 const schemaReady = new WeakMap();
@@ -143,12 +175,6 @@ async function readFounderState(env) {
 
 /* ----------------------------------------------------------------- - stream */
 
-function sleep(ms) {
-  return new Promise(function (resolve) {
-    setTimeout(resolve, ms);
-  });
-}
-
 function streamFounderState(env, request) {
   const encoder = new TextEncoder();
   const stream = new TransformStream();
@@ -160,11 +186,6 @@ function streamFounderState(env, request) {
       stopped = true;
     });
   }
-
-  const push = async function (eventName, data) {
-    const payload = "event: " + eventName + "\ndata: " + JSON.stringify(data) + "\n\n";
-    await writer.write(encoder.encode(payload));
-  };
 
   (async function () {
     try {
@@ -183,7 +204,9 @@ function streamFounderState(env, request) {
         const signature = JSON.stringify(state);
         if (signature !== previous) {
           previous = signature;
-          await push("founder", state);
+          await writer.write(
+            encoder.encode("event: founder\ndata: " + JSON.stringify(state) + "\n\n")
+          );
         } else {
           await writer.write(encoder.encode(": ping\n\n"));
         }
@@ -252,30 +275,39 @@ function validateAccount(body) {
 }
 
 function isUniqueEmailError(error) {
-  const message = String((error && error.message) || "");
-  return message.indexOf("accounts.email") !== -1;
+  return String((error && error.message) || "").indexOf("accounts.email") !== -1;
 }
 
 function isUniqueSeatError(error) {
-  const message = String((error && error.message) || "");
-  return message.indexOf("accounts.seat_number") !== -1;
+  return String((error && error.message) || "").indexOf("accounts.seat_number") !== -1;
 }
 
-async function insertAccount(env, data) {
+/**
+ * Rezerva atomic primul loc liber (1..total). Locurile eliberate de anulari
+ * sunt reutilizate, deci `remaining` si numerotarea raman coerente.
+ */
+function insertAccount(env, data) {
   const now = new Date().toISOString();
   const id = crypto.randomUUID();
 
-  const statement = env.DB.prepare(
-    `INSERT INTO accounts (id, name, email, cui, role, marketing_consent, status, seat_number, created_at)
-     SELECT ?1, ?2, ?3, ?4, ?5, ?6, 'reserved', (SELECT COUNT(*) + 1 FROM accounts), ?7
-     WHERE (SELECT COUNT(*) FROM accounts) <
-           COALESCE((SELECT total_seats FROM founder_config WHERE id = 1), ?8)
+  return env.DB.prepare(
+    `WITH RECURSIVE seq(n) AS (
+       SELECT 1 UNION ALL SELECT n + 1 FROM seq WHERE n < ?8
+     ),
+     taken AS (
+       SELECT seat_number FROM accounts WHERE seat_number IS NOT NULL
+     ),
+     free_seat AS (
+       SELECT MIN(n) AS seat FROM seq WHERE n NOT IN (SELECT seat_number FROM taken)
+     )
+     INSERT INTO accounts (id, name, email, cui, role, marketing_consent, status, seat_number, created_at)
+     SELECT ?1, ?2, ?3, ?4, ?5, ?6, 'reserved', (SELECT seat FROM free_seat), ?7
+     WHERE (SELECT seat FROM free_seat) IS NOT NULL
+       AND (SELECT COUNT(*) FROM taken) < ?8
      RETURNING id, seat_number, created_at`
-  ).bind(id, data.name, data.email, data.cui, data.role, data.marketingConsent, now, DEFAULT_TOTAL_SEATS);
-
-  const result = await statement.all();
-  const row = result && result.results && result.results[0];
-  return row || null;
+  )
+    .bind(id, data.name, data.email, data.cui, data.role, data.marketingConsent, now, DEFAULT_TOTAL_SEATS)
+    .all();
 }
 
 async function handleCreateAccount(env, request) {
@@ -296,7 +328,8 @@ async function handleCreateAccount(env, request) {
 
   for (let attempt = 0; attempt < SEAT_RETRIES; attempt += 1) {
     try {
-      created = await insertAccount(env, validation.data);
+      const result = await insertAccount(env, validation.data);
+      created = (result && result.results && result.results[0]) || null;
       break;
     } catch (error) {
       lastError = error;
@@ -318,14 +351,7 @@ async function handleCreateAccount(env, request) {
     return fail("SOLD_OUT", "Toate locurile Founder Bundle au fost rezervate.", 409, state);
   }
 
-  await env.DB.prepare(
-    "INSERT INTO founder_events (seat_number, kind, created_at) VALUES (?1, 'reserved', ?2)"
-  )
-    .bind(created.seat_number, created.created_at)
-    .run()
-    .catch(function () {
-      /* audit trail is best-effort */
-    });
+  await logFounderEvent(env, created.seat_number, "reserved");
 
   const state = await readFounderState(env);
 
@@ -371,6 +397,183 @@ async function handleGetAccount(env, id) {
   });
 }
 
+function logFounderEvent(env, seatNumber, kind) {
+  return env.DB.prepare(
+    "INSERT INTO founder_events (seat_number, kind, created_at) VALUES (?1, ?2, ?3)"
+  )
+    .bind(seatNumber, kind, new Date().toISOString())
+    .run()
+    .catch(function () {
+      /* audit trail is best-effort */
+    });
+}
+
+/* -------------------------------------------------------------------- admin */
+
+const loginAttempts = new Map();
+
+function loginKey(request) {
+  return request.headers.get("cf-connecting-ip") || "local";
+}
+
+function loginBlocked(key) {
+  const entry = loginAttempts.get(key);
+  if (!entry) {
+    return false;
+  }
+  if (Date.now() - entry.first > LOGIN_WINDOW_MS) {
+    loginAttempts.delete(key);
+    return false;
+  }
+  return entry.count >= LOGIN_MAX_ATTEMPTS;
+}
+
+function registerLoginFailure(key) {
+  const entry = loginAttempts.get(key);
+  if (!entry || Date.now() - entry.first > LOGIN_WINDOW_MS) {
+    loginAttempts.set(key, { first: Date.now(), count: 1 });
+    return;
+  }
+  entry.count += 1;
+}
+
+function adminGuard(env, request) {
+  const expected = env && env.ADMIN_TOKEN;
+  if (!expected) {
+    return fail(
+      "ADMIN_NOT_CONFIGURED",
+      "Panoul de administrare nu are token configurat. Adauga secretul ADMIN_TOKEN pentru acest site.",
+      503
+    );
+  }
+
+  if (loginBlocked(loginKey(request))) {
+    return fail("TOO_MANY_ATTEMPTS", "Prea multe incercari. Reincearca peste cateva minute.", 429);
+  }
+
+  if (!tokensMatch(bearerToken(request), expected)) {
+    return fail("UNAUTHORIZED", "Token de administrare invalid.", 401);
+  }
+
+  return null;
+}
+
+async function handleAdminLogin(env, request) {
+  if (!env || !env.ADMIN_TOKEN) {
+    return fail(
+      "ADMIN_NOT_CONFIGURED",
+      "Panoul de administrare nu are token configurat. Adauga secretul ADMIN_TOKEN pentru acest site.",
+      503
+    );
+  }
+
+  const key = loginKey(request);
+  if (loginBlocked(key)) {
+    return fail("TOO_MANY_ATTEMPTS", "Prea multe incercari. Reincearca peste cateva minute.", 429);
+  }
+
+  const body = await readJson(request);
+  const provided = clean(body && body.token);
+
+  if (!provided || !tokensMatch(provided, env.ADMIN_TOKEN)) {
+    registerLoginFailure(key);
+    return fail("UNAUTHORIZED", "Token invalid.", 401);
+  }
+
+  loginAttempts.delete(key);
+  await ensureSchema(env);
+  return jsonResponse({ ok: true, founder: await readFounderState(env) });
+}
+
+async function handleAdminAccounts(env, url) {
+  const search = clean(url.searchParams.get("q")).toLowerCase();
+
+  const rows = await env.DB.prepare(
+    `SELECT id, name, email, cui, role, marketing_consent, status, seat_number, created_at
+       FROM accounts
+       ORDER BY CASE WHEN seat_number IS NULL THEN 1 ELSE 0 END, seat_number ASC, created_at DESC
+       LIMIT ?1`
+  )
+    .bind(ADMIN_SEARCH_LIMIT)
+    .all();
+
+  const accounts = ((rows && rows.results) || [])
+    .filter(function (row) {
+      if (!search) {
+        return true;
+      }
+      return (
+        String(row.name || "").toLowerCase().indexOf(search) !== -1 ||
+        String(row.email || "").toLowerCase().indexOf(search) !== -1 ||
+        String(row.cui || "").toLowerCase().indexOf(search) !== -1
+      );
+    })
+    .map(function (row) {
+      return {
+        id: row.id,
+        name: row.name,
+        email: row.email,
+        cui: row.cui,
+        role: row.role,
+        marketingConsent: Number(row.marketing_consent) === 1,
+        status: row.status,
+        seatNumber: row.seat_number,
+        createdAt: row.created_at
+      };
+    });
+
+  const founder = await readFounderState(env);
+  const cancelled = accounts.filter(function (account) {
+    return account.status === "cancelled";
+  }).length;
+
+  return jsonResponse({
+    ok: true,
+    founder: founder,
+    stats: {
+      reserved: accounts.length - cancelled,
+      cancelled: cancelled,
+      totalAccounts: accounts.length
+    },
+    accounts: accounts
+  });
+}
+
+async function handleAdminCancel(env, id) {
+  const account = await env.DB.prepare(
+    "SELECT id, name, email, seat_number, status FROM accounts WHERE id = ?1"
+  )
+    .bind(id)
+    .first();
+
+  if (!account) {
+    return fail("NOT_FOUND", "Contul nu exista.", 404);
+  }
+
+  if (account.status !== "reserved" || account.seat_number === null) {
+    return fail("ALREADY_CANCELLED", "Aceasta rezervare este deja anulata.", 409);
+  }
+
+  await env.DB.prepare(
+    "UPDATE accounts SET status = 'cancelled', seat_number = NULL WHERE id = ?1 AND status = 'reserved'"
+  )
+    .bind(id)
+    .run();
+
+  await logFounderEvent(env, account.seat_number, "cancelled");
+
+  return jsonResponse({
+    ok: true,
+    cancelled: {
+      id: account.id,
+      name: account.name,
+      email: account.email,
+      seatNumber: account.seat_number
+    },
+    founder: await readFounderState(env)
+  });
+}
+
 /* -------------------------------------------------------------------- router */
 
 async function routeApi(env, request, url) {
@@ -410,6 +613,41 @@ async function routeApi(env, request, url) {
       await ensureSchema(env);
       return await handleGetAccount(env, accountMatch[1]);
     } catch (error) {
+      return fail("DB_UNAVAILABLE", "Baza de date nu este disponibila.", 503);
+    }
+  }
+
+  /* -------------------------------------------------------------- admin */
+
+  if (path === "/api/admin/login" && method === "POST") {
+    return handleAdminLogin(env, request);
+  }
+
+  if (path === "/api/admin/accounts" && method === "GET") {
+    const denied = adminGuard(env, request);
+    if (denied) {
+      return denied;
+    }
+    try {
+      await ensureSchema(env);
+      return await handleAdminAccounts(env, url);
+    } catch (error) {
+      console.error("admin list failed", error);
+      return fail("DB_UNAVAILABLE", "Baza de date nu este disponibila.", 503);
+    }
+  }
+
+  const cancelMatch = path.match(/^\/api\/admin\/accounts\/([A-Za-z0-9-]{8,64})\/cancel$/);
+  if (cancelMatch && method === "POST") {
+    const denied = adminGuard(env, request);
+    if (denied) {
+      return denied;
+    }
+    try {
+      await ensureSchema(env);
+      return await handleAdminCancel(env, cancelMatch[1]);
+    } catch (error) {
+      console.error("admin cancel failed", error);
       return fail("DB_UNAVAILABLE", "Baza de date nu este disponibila.", 503);
     }
   }
