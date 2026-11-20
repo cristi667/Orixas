@@ -1,0 +1,17 @@
+{
+  "name": "orixas-site",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Orixas.app - site static + backend Workers/D1 pentru conturi si locuri Founder in timp real",
+  "type": "module",
+  "scripts": {
+    "build:public": "node scripts/build-public.mjs",
+    "dev": "npm run build:public && wrangler dev --ip 0.0.0.0 --port 3000",
+    "db:local": "wrangler d1 execute orixas-accounts --local --file=migrations/0001_accounts.sql",
+    "db:remote": "wrangler d1 execute orixas-accounts --remote --file=migrations/0001_accounts.sql",
+    "deploy": "npm run build:public && wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4.38.0"
+  }
+}

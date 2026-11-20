@@ -1,0 +1,23 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "orixas",
+  "main": "worker/index.js",
+  "compatibility_date": "2026-11-01",
+  // public/ este generat din fisierele statice ale site-ului: npm run build:public
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS"
+  },
+  "observability": {
+    "enabled": true
+  },
+  // In productie inlocuieste database_id cu id-ul real:
+  //   npx wrangler d1 create orixas-accounts
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "orixas-accounts",
+      "database_id": "00000000-0000-0000-0000-000000000000"
+    }
+  ]
+}

@@ -18,14 +18,36 @@
   }
 
   function validName(name) {
-    return /^[A-Za-zA-Za-z\u00C0-\u017F\s\-'.]{3,80}$/.test(name);
+    return /^[A-Za-z\u00C0-\u024F\u1E00-\u1EFF][A-Za-z0-9\u00C0-\u024F\u1E00-\u1EFF\s\-'.]{2,79}$/.test(name);
   }
 
   function validCui(cui) {
     return /^RO\d{6,10}$/.test(cui);
   }
 
-  form.addEventListener("submit", function (event) {
+  const submitButton = form.querySelector("button[type=submit]");
+  if (submitButton) {
+    submitButton.setAttribute("data-founder-submit", "");
+  }
+
+  function showError(text) {
+    message.className = "message error";
+    message.textContent = text;
+  }
+
+  function showSuccess(text) {
+    message.className = "message success";
+    message.textContent = text;
+  }
+
+  function fieldErrorFrom(body) {
+    if (body && Array.isArray(body.details) && body.details.length) {
+      return body.details[0].message;
+    }
+    return (body && body.message) || "Rezervarea nu a putut fi salvata. Incearca din nou.";
+  }
+
+  form.addEventListener("submit", async function (event) {
     event.preventDefault();
     message.className = "message";
     message.textContent = "";
@@ -38,32 +60,27 @@
     const consentMarketing = form.consentMarketing.checked;
 
     if (!validName(rawName)) {
-      message.textContent = "Numele trebuie să aibă între 3 și 80 caractere și să conțină doar litere uzuale.";
-      message.classList.add("error");
+      showError("Numele trebuie sa aiba intre 3 si 80 caractere si sa contina doar litere uzuale.");
       return;
     }
 
     if (!validEmail(rawEmail)) {
-      message.textContent = "Email invalid. Verifică formatul adresei.";
-      message.classList.add("error");
+      showError("Email invalid. Verifica formatul adresei.");
       return;
     }
 
     if (!validCui(rawCui)) {
-      message.textContent = "CUI invalid. Folosește formatul RO urmat de 6-10 cifre (ex: RO41892014).";
-      message.classList.add("error");
+      showError("CUI invalid. Foloseste formatul RO urmat de 6-10 cifre (ex: RO41892014).");
       return;
     }
 
     if (rawRole !== "antreprenor" && rawRole !== "contabil") {
-      message.textContent = "Selectează un rol valid.";
-      message.classList.add("error");
+      showError("Selecteaza un rol valid.");
       return;
     }
 
     if (!consentLegal) {
-      message.textContent = "Pentru crearea contului trebuie să accepți Termenii și Politica de Confidențialitate.";
-      message.classList.add("error");
+      showError("Pentru crearea contului trebuie sa accepti Termenii si Politica de Confidentialitate.");
       return;
     }
 
@@ -72,24 +89,98 @@
       email: rawEmail,
       cui: rawCui,
       role: rawRole,
-      consentLegalAt: new Date().toISOString(),
-      consentMarketing: consentMarketing,
-      founderSeatRequestedAt: new Date().toISOString()
+      consentLegal: true,
+      marketingConsent: consentMarketing
     };
 
-    try {
-      sessionStorage.setItem("orixasSignup", JSON.stringify(payload));
-    } catch (err) {
-      message.textContent = "Datele nu au putut fi salvate local. Continuă direct în demo.";
-      message.classList.add("error");
+    if (submitButton) {
+      submitButton.disabled = true;
+      submitButton.dataset.previousLabel = submitButton.dataset.previousLabel || submitButton.textContent;
+      submitButton.textContent = "Se rezerva locul...";
+    }
+
+    const founderApi = window.oriFounder;
+    const result = founderApi && typeof founderApi.reserve === "function"
+      ? await founderApi.reserve(payload)
+      : { ok: false, status: 0, body: null, network: true };
+
+    if (submitButton) {
+      submitButton.disabled = false;
+      submitButton.textContent = submitButton.dataset.previousLabel || "Rezerva un loc Founder";
+    }
+
+    if (result.ok && result.body && result.body.account) {
+      const account = result.body.account;
+      const founder = result.body.founder || {};
+
+      try {
+        sessionStorage.setItem(
+          "orixasSignup",
+          JSON.stringify({
+            name: payload.name,
+            email: payload.email,
+            cui: payload.cui,
+            role: payload.role,
+            accountId: account.id,
+            seatNumber: account.seatNumber,
+            founderSeatsLeft: founder.remaining,
+            createdAt: account.createdAt
+          })
+        );
+      } catch (err) {
+        /* continui chiar daca sessionStorage nu e disponibil */
+      }
+
+      showSuccess(
+        "Cont creat. Locul Founder #" +
+          account.seatNumber +
+          " este rezervat pe numele " +
+          payload.email +
+          ". Au ramas " +
+          (typeof founder.remaining === "number" ? founder.remaining : "?") +
+          " locuri. Te redirectionam in platforma..."
+      );
+
+      setTimeout(function () {
+        window.location.href = "app.html";
+      }, 1200);
       return;
     }
 
-    message.textContent = "Loc Founder rezervat. Te redirecționăm în platformă...";
-    message.classList.add("success");
+    if (result.network) {
+      // Backend-ul nu raspunde: pastram rezervarea local, ca sa nu pierdem datele introduse.
+      try {
+        sessionStorage.setItem(
+          "orixasSignup",
+          JSON.stringify({
+            name: payload.name,
+            email: payload.email,
+            cui: payload.cui,
+            role: payload.role,
+            pendingSync: true,
+            createdAt: new Date().toISOString()
+          })
+        );
+      } catch (err) {
+        /* ignore */
+      }
 
-    setTimeout(function () {
-      window.location.href = "app.html";
-    }, 850);
+      showError(
+        "Serverul de rezervari nu este disponibil. Datele au fost salvate local in acest browser; reincearca dupa ce backend-ul este pornit."
+      );
+      return;
+    }
+
+    if (result.body && result.body.error === "EMAIL_EXISTS") {
+      showError("Exista deja un cont cu aceasta adresa de email. Foloseste adresa contului existent sau scrie-ne.");
+      return;
+    }
+
+    if (result.body && result.body.error === "SOLD_OUT") {
+      showError("Toate cele 20 de locuri Founder Bundle sunt rezervate. Lasa-ne emailul pentru lista de asteptare.");
+      return;
+    }
+
+    showError(fieldErrorFrom(result.body));
   });
 })();

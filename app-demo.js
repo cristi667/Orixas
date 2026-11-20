@@ -324,14 +324,4 @@
     });
   });
 
-  try {
-    const signupRaw = sessionStorage.getItem("orixasSignup");
-    if (signupRaw && founderSeats) {
-      founderSeats.textContent = "19";
-    }
-  } catch (err) {
-    if (founderSeats) {
-      founderSeats.textContent = "20";
-    }
-  }
 })();

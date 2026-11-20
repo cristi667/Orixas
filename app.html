@@ -64,7 +64,9 @@
               </p>
             </div>
             <div class="actions" style="margin-top: 0">
-              <span class="status">Founder seats: <strong id="founderSeats" class="mono">20</strong>/20</span>
+              <span class="status" data-founder-live>
+                Founder seats: <strong id="founderSeats" class="mono" data-founder-taken>0</strong>/<span data-founder-total>20</span>
+              </span>
               <span id="syncStatus" class="status">În așteptare</span>
               <button id="runDemoBtn" class="btn btn-primary">Rulează Demo Automat</button>
             </div>
@@ -160,6 +162,7 @@
     </main>
 
     <script src="assets/js/main.js"></script>
+    <script src="assets/js/founder.js"></script>
     <script src="assets/js/mock-api.js"></script>
     <script src="assets/js/app-demo.js"></script>
   </body>

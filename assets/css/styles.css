@@ -788,3 +788,45 @@ tr:last-child td {
     grid-template-columns: 1fr;
   }
 }
+
+/* Founder Bundle: contor live (assets/js/founder.js) */
+.meter {
+  position: relative;
+  height: 6px;
+  margin: 0.55rem 0 0.2rem;
+  overflow: hidden;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+
+.meter-fill {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--accent), #3b82f6);
+  transition: width 0.5s ease;
+}
+
+.bump {
+  animation: founder-bump 0.7s ease;
+}
+
+@keyframes founder-bump {
+  0% { color: var(--accent); }
+  100% { color: inherit; }
+}
+
+body[data-founder-state="sold-out"] [data-founder-remaining] {
+  color: var(--danger);
+}
+
+body[data-founder-state="offline"] [data-founder-live]::after {
+  content: " · offline";
+  color: var(--text-muted);
+}
+
+.small {
+  font-size: 0.82rem;
+}

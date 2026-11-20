@@ -113,7 +113,10 @@
           </div>
           <div>
             <div class="price mono">100 EUR <small>/ lună</small></div>
-            <p class="mono text-muted">Locuri rămase: 20</p>
+            <p class="mono text-muted" data-founder-live>
+              Locuri rămase: <strong data-founder-remaining>20</strong> din <span data-founder-total>20</span>
+            </p>
+            <div class="meter" aria-hidden="true"><span class="meter-fill" data-founder-meter style="width: 0%"></span></div>
             <a class="btn btn-primary" href="auth.html">Rezervă acum</a>
           </div>
         </article>
@@ -147,5 +150,6 @@
     </main>
 
     <script src="assets/js/main.js"></script>
+    <script src="assets/js/founder.js"></script>
   </body>
 </html>

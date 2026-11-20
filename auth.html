@@ -32,7 +32,13 @@
     <main>
       <section class="auth-shell reveal">
         <article class="card">
-          <span class="eyebrow">Founder Bundle: 20 locuri disponibile</span>
+          <span class="eyebrow" data-founder-live>
+            Founder Bundle: <span data-founder-remaining>20</span> locuri disponibile
+          </span>
+          <p class="mono text-muted" style="margin-top:0.6rem">
+            Locuri ocupate: <strong data-founder-taken>0</strong> / <span data-founder-total>20</span> · actualizat în timp real
+          </p>
+          <div class="meter" aria-hidden="true"><span class="meter-fill" data-founder-meter style="width: 0%"></span></div>
           <h1>Creare cont și rezervare loc</h1>
           <p class="text-muted">
             Completează datele de bază și rezervă planul Founder la 100 EUR/lună pe viață, cu acces la modulele
@@ -100,6 +106,7 @@
     </main>
 
     <script src="assets/js/main.js"></script>
+    <script src="assets/js/founder.js"></script>
     <script src="assets/js/auth.js"></script>
   </body>
 </html>
