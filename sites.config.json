@@ -1,0 +1,17 @@
+{
+  "siteId": "7c1e8f42-3b6d-4a51-9e0c-2f5d8b7a1c93",
+  "name": "Orixas.app",
+  "environments": {
+    "preview": {
+      "url": "https://orixas-app-7gj94w-preview.freebuff.site",
+      "d1Binding": "DB",
+      "published": false
+    },
+    "production": {
+      "url": "https://orixas-app-7gj94w.freebuff.site",
+      "d1Binding": "DB",
+      "published": true
+    }
+  },
+  "deploy": "npm run build:public, then sites_deploy with deploy.json"
+}
