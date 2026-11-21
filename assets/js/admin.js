@@ -1,4 +1,4 @@
-/* Panou admin: POST /api/admin/login, GET /api/admin/accounts, POST /api/admin/accounts/:id/cancel */
+/* Panou admin: login, lista conturi, anulare cu rambursare, reincercare rambursare. */
 (function () {
   const TOKEN_KEY = "orixasAdminToken";
 
@@ -15,10 +15,19 @@
   const emptyNote = document.getElementById("adminEmpty");
   const message = document.getElementById("adminMessage");
   const cancelledCount = document.getElementById("adminCancelled");
+  const paidCount = document.getElementById("adminPaid");
 
   if (!loginView || !panelView || !loginForm) {
     return;
   }
+
+  const PAYMENT_LABELS = {
+    paid: "platit",
+    unpaid: "in asteptare",
+    expired: "expirat",
+    refunded: "rambursat",
+    cancelled: "anulat"
+  };
 
   let token = "";
   let accounts = [];
@@ -79,6 +88,13 @@
     });
   }
 
+  function formatAmount(cents, currency) {
+    if (cents == null) {
+      return "-";
+    }
+    return (Number(cents) / 100).toFixed(2).replace(".", ",") + " " + String(currency || "EUR").toUpperCase();
+  }
+
   async function api(path, options) {
     const settings = Object.assign({ method: "GET" }, options || {});
     settings.headers = Object.assign(
@@ -99,12 +115,8 @@
     return { ok: response.ok, status: response.status, body: body };
   }
 
-  function applyFounderState(state) {
-    if (!state || typeof window.oriFounder === "undefined") {
-      return;
-    }
-    // founder.js isi actualizeaza propriii observablei; aici doar fortam re-renderul contorului
-    if (typeof window.oriFounder.refresh === "function") {
+  function refreshFounderCounters() {
+    if (window.oriFounder && typeof window.oriFounder.refresh === "function") {
       window.oriFounder.refresh();
     }
   }
@@ -114,7 +126,8 @@
     const withCancelled = showCancelled.checked;
 
     const rows = accounts.filter(function (account) {
-      if (!withCancelled && account.status === "cancelled") {
+      const inactive = account.status === "cancelled" || account.status === "expired" || account.status === "withdrawn";
+      if (!withCancelled && inactive) {
         return false;
       }
       if (!query) {
@@ -130,7 +143,11 @@
     tbody.innerHTML = "";
     rows.forEach(function (account) {
       const tr = document.createElement("tr");
-      const isCancelled = account.status === "cancelled";
+      const inactive = account.status !== "reserved" && account.status !== "pending";
+      const canCancel = !inactive;
+      const canRefund = account.paymentStatus === "paid" && !canCancel;
+      const paymentLabel = PAYMENT_LABELS[account.paymentStatus] || account.paymentStatus;
+
       tr.innerHTML =
         '<td class="mono">' +
         (account.seatNumber == null ? "-" : "#" + safe(account.seatNumber)) +
@@ -143,29 +160,47 @@
         "</td><td>" +
         safe(account.role) +
         '</td><td><span class="tag ' +
-        (isCancelled ? "warn" : "ok") +
+        (account.paymentStatus === "paid" ? "ok" : account.paymentStatus === "refunded" ? "warn" : "") +
         '">' +
-        (isCancelled ? "anulat" : "rezervat") +
+        safe(paymentLabel) +
+        "</span><br><span class=\"small mono\">" +
+        formatAmount(account.amountCents, account.currency) +
+        "</span></td><td><span class=\"tag " +
+        (inactive ? "warn" : "ok") +
+        '">' +
+        safe(account.status) +
         "</span></td><td>" +
-        formatDate(account.createdAt) +
-        '</td><td><button class="btn btn-cancel" type="button" data-cancel="' +
-        safe(account.id) +
-        '" data-seat="' +
-        (account.seatNumber == null ? "" : safe(account.seatNumber)) +
-        '"' +
-        (isCancelled ? " disabled" : "") +
-        ">" +
-        (isCancelled ? "eliberat" : "Anulează locul") +
-        "</button></td>";
+        formatDate(account.paidAt || account.createdAt) +
+        '</td><td class="admin-actions">' +
+        (canCancel
+          ? '<button class="btn btn-cancel" type="button" data-cancel="' +
+            safe(account.id) +
+            '" data-seat="' +
+            (account.seatNumber == null ? "" : safe(account.seatNumber)) +
+            '" data-paid="' +
+            (account.paymentStatus === "paid" ? "1" : "0") +
+            '">Anuleaza locul</button>'
+          : "") +
+        (canRefund
+          ? '<button class="btn" type="button" data-refund="' + safe(account.id) + '">Ramburseaza</button>'
+          : "") +
+        "</td>";
       tbody.appendChild(tr);
     });
 
     emptyNote.hidden = rows.length > 0;
     cancelledCount.textContent = String(
       accounts.filter(function (account) {
-        return account.status === "cancelled";
+        return account.status === "cancelled" || account.status === "expired" || account.status === "withdrawn";
       }).length
     );
+    if (paidCount) {
+      paidCount.textContent = String(
+        accounts.filter(function (account) {
+          return account.paymentStatus === "paid";
+        }).length
+      );
+    }
   }
 
   async function load() {
@@ -186,7 +221,7 @@
 
     if (result.status === 503) {
       showMessage(
-        "Panoul nu este configurat pe server: adaugă secretul ADMIN_TOKEN în setările site-ului, apoi reîncarcă.",
+        "Panoul nu este configurat pe server: adauga secretul ADMIN_TOKEN in setarile site-ului, apoi reincarca.",
         "error"
       );
       setView(true);
@@ -194,7 +229,7 @@
     }
 
     if (!result.ok || !result.body) {
-      showMessage("Nu am putut încărca lista de conturi. Încearcă din nou.", "error");
+      showMessage("Nu am putut incarca lista de conturi. Incearca din nou.", "error");
       setView(true);
       return;
     }
@@ -202,16 +237,28 @@
     accounts = result.body.accounts || [];
     setView(true);
     render();
-    applyFounderState(result.body.founder);
+    refreshFounderCounters();
   }
 
-  async function cancel(accountId, seatNumber, button) {
+  function confirmCancel(seatNumber, isPaid) {
+    const base = "Anulezi locul " + (seatNumber ? "#" + seatNumber : "") + "?";
+    const extra = isPaid
+      ? " Avansul incasat va fi rambursat automat pe aceeasi metoda de plata."
+      : "";
+    return window.confirm(base + extra + " Locul devine imediat disponibil public.");
+  }
+
+  async function cancel(accountId, seatNumber, isPaid, button) {
     if (busy) {
       return;
     }
+    if (!confirmCancel(seatNumber, isPaid)) {
+      return;
+    }
+
     busy = true;
     button.disabled = true;
-    button.textContent = "Se anulează...";
+    button.textContent = "Se anuleaza...";
 
     const result = await api("/api/admin/accounts/" + encodeURIComponent(accountId) + "/cancel", {
       method: "POST"
@@ -220,8 +267,16 @@
     busy = false;
 
     if (result.ok) {
+      const refund = result.body && result.body.refund;
       showMessage(
-        "Locul " + (seatNumber ? "#" + seatNumber : "") + " a fost eliberat și este din nou disponibil public.",
+        "Locul " +
+          (seatNumber ? "#" + seatNumber : "") +
+          " a fost eliberat si este din nou disponibil public." +
+          (refund && refund.ok && !refund.skipped && !refund.already
+            ? " Rambursarea a fost initiata in Stripe."
+            : refund && refund.ok === false
+              ? " ATENTIE: rambursarea nu a reusit - foloseste butonul Ramburseaza."
+              : ""),
         "success"
       );
       await load();
@@ -229,11 +284,37 @@
     }
 
     button.disabled = false;
-    button.textContent = "Anulează locul";
-    showMessage(
-      (result.body && result.body.message) || "Anularea nu a reușit. Încearcă din nou.",
-      "error"
-    );
+    button.textContent = "Anuleaza locul";
+    showMessage((result.body && result.body.message) || "Anularea nu a reusit. Incearca din nou.", "error");
+  }
+
+  async function refund(accountId, button) {
+    if (busy) {
+      return;
+    }
+    if (!window.confirm("Rambursezi avansul acestui cont pe aceeasi metoda de plata?")) {
+      return;
+    }
+
+    busy = true;
+    button.disabled = true;
+    button.textContent = "Se ramburseaza...";
+
+    const result = await api("/api/admin/accounts/" + encodeURIComponent(accountId) + "/refund", {
+      method: "POST"
+    });
+
+    busy = false;
+
+    if (result.ok) {
+      showMessage("Rambursarea a fost initiata in Stripe.", "success");
+      await load();
+      return;
+    }
+
+    button.disabled = false;
+    button.textContent = "Ramburseaza";
+    showMessage((result.body && result.body.message) || "Rambursarea nu a reusit.", "error");
   }
 
   tbody.addEventListener("click", function (event) {
@@ -241,12 +322,17 @@
     if (!(target instanceof HTMLElement)) {
       return;
     }
-    const button = target.closest("button[data-cancel]");
-    if (!button) {
+
+    const cancelBtn = target.closest("button[data-cancel]");
+    if (cancelBtn) {
+      cancel(cancelBtn.dataset.cancel, cancelBtn.dataset.seat, cancelBtn.dataset.paid === "1", cancelBtn);
       return;
     }
-    const seat = button.dataset.seat;
-    cancel(button.dataset.cancel, seat, button);
+
+    const refundBtn = target.closest("button[data-refund]");
+    if (refundBtn) {
+      refund(refundBtn.dataset.refund, refundBtn);
+    }
   });
 
   loginForm.addEventListener("submit", async function (event) {
@@ -257,7 +343,7 @@
     const value = (tokenInput.value || "").trim();
     if (value.length < 8) {
       loginMessage.className = "message error";
-      loginMessage.textContent = "Tokenul trebuie să aibă cel puțin 8 caractere.";
+      loginMessage.textContent = "Tokenul trebuie sa aiba cel putin 8 caractere.";
       return;
     }
 
@@ -270,7 +356,7 @@
 
     if (result.ok) {
       loginMessage.className = "message success";
-      loginMessage.textContent = "Autentificare reușită.";
+      loginMessage.textContent = "Autentificare reusita.";
       tokenInput.value = "";
       await load();
       return;
@@ -279,7 +365,7 @@
     storeToken("");
     loginMessage.className = "message error";
     loginMessage.textContent =
-      (result.body && result.body.message) || "Token invalid. Verifică valoarea configurată în site.";
+      (result.body && result.body.message) || "Token invalid. Verifica valoarea configurata in site.";
   });
 
   logoutBtn.addEventListener("click", function () {

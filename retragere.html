@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="ro">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Retrageți-vă din contractul Orixas Founder Bundle - funcție online de retragere în 14 zile." />
+    <title>Orixas.app | Retrageți-vă din contract aici</title>
+    <link rel="stylesheet" href="assets/css/styles.css" />
+  </head>
+  <body>
+    <header class="page-header">
+      <div class="container navbar">
+        <a class="brand" href="index.html">Orixas<span>.app</span></a>
+        <button id="navToggle" class="nav-toggle" aria-label="Deschide meniu" aria-expanded="false">☰</button>
+        <nav id="navLinks" class="nav-links" aria-label="Navigație principală">
+          <a class="nav-link" data-page="index.html" href="index.html">Acasă</a>
+          <a class="nav-link" data-page="pricing.html" href="pricing.html">Pricing</a>
+          <a class="nav-link" data-page="faq.html" href="faq.html">FAQ</a>
+          <a class="nav-link" data-page="auth.html" href="auth.html">Creare cont</a>
+          <a class="nav-cta" href="auth.html">Rezervă Founder</a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <section class="legal-wrap reveal">
+        <article class="card legal-doc">
+          <span class="eyebrow">Dreptul de retragere · 14 zile</span>
+          <h1>Retrageți-vă din contract aici</h1>
+          <p class="text-muted">
+            Poți renunța la rezervarea Founder Bundle în termen de 14 zile de la data plății avansului, fără să
+            justifici decizia și fără costuri. Avansul se rambursează în maximum 14 zile, pe aceeași metodă de plată.
+          </p>
+
+          <form id="withdrawForm" novalidate>
+            <div class="form-grid">
+              <div>
+                <label class="label" for="withdrawName">Nume și prenume</label>
+                <input id="withdrawName" name="name" type="text" maxlength="80" autocomplete="name" placeholder="Ex: Andrei Ionescu" required />
+              </div>
+              <div>
+                <label class="label" for="withdrawEmail">Email folosit la rezervare</label>
+                <input id="withdrawEmail" name="email" type="email" maxlength="120" autocomplete="email" placeholder="nume@firma.ro" required />
+              </div>
+              <div>
+                <label class="label" for="withdrawAccountId">Cod contract / loc Founder</label>
+                <input id="withdrawAccountId" name="accountId" type="text" maxlength="64" class="mono" placeholder="Codul din confirmarea plății" required />
+                <p class="text-muted small">Codul apare în linkul paginii de rezervare, în emailul de confirmare și în factură.</p>
+              </div>
+              <div>
+                <label class="label" for="withdrawReason">Motiv (opțional)</label>
+                <input id="withdrawReason" name="reason" type="text" maxlength="500" placeholder="Nu e obligatoriu" />
+              </div>
+            </div>
+
+            <div class="actions">
+              <button class="btn btn-primary" type="submit">Trimite cererea de retragere</button>
+              <a class="btn" href="terms.html">Citește termenii</a>
+            </div>
+            <p id="withdrawMessage" class="message" aria-live="polite"></p>
+          </form>
+
+          <section id="withdrawConfirmBox" class="legal-note" hidden>
+            <h2>Confirmă retragerea</h2>
+            <p class="text-muted">Verifică datele introduse. După confirmare, locul Founder este eliberat imediat.</p>
+            <dl id="withdrawSummary" class="summary-list"></dl>
+            <div class="actions">
+              <button id="withdrawConfirm" class="btn btn-primary" type="button">Confirmați retragerea</button>
+              <button id="withdrawBack" class="btn" type="button">Modifică datele</button>
+            </div>
+          </section>
+
+          <section id="withdrawResult" class="legal-note" hidden></section>
+
+          <h2>Ce se întâmplă după confirmare</h2>
+          <ul class="legal-list">
+            <li>Primești imediat un număr de referință și data/ora înregistrării.</li>
+            <li>Trimiterea confirmării pe email (suport durabil) se face fără întârziere nejustificată, cu conținutul cererii.</li>
+            <li>Rambursarea avansului de 50 EUR se face în maximum 14 zile, pe aceeași metodă de plată.</li>
+            <li>Locul tău Founder devine din nou disponibil public în timp real.</li>
+          </ul>
+
+          <h2>Dacă preferi email sau poștă</h2>
+          <p class="text-muted">
+            Poți trimite o declarație neechivocă la
+            <a data-legal-href="email" href="mailto:contact@orixas.app"><span data-legal="email">contact@orixas.app</span></a>
+            sau formularul-model din <a href="terms.html">Termeni și condiții</a>, anexă. Confirmarea se trimite pe email.
+          </p>
+
+          <h2>Datele comerciantului</h2>
+          <ul class="legal-list">
+            <li><strong data-legal="companyName">«Denumirea comerciantului»</strong>, <span data-legal="address">«Sediul social»</span></li>
+            <li>CUI <span data-legal="cui">«CUI»</span> · Reg. Com. <span data-legal="regCom">«Număr»</span></li>
+            <li>Email: <a data-legal-href="email" href="mailto:contact@orixas.app"><span data-legal="email">contact@orixas.app</span></a> · Telefon: <span data-legal="phone">«Telefon»</span></li>
+          </ul>
+        </article>
+      </section>
+
+      <footer class="site-footer legal-wrap">
+        <div class="footer-row">
+          <span>Orixas.app • Retragere din contract</span>
+          <nav class="footer-links" aria-label="Linkuri legale">
+            <a href="terms.html">Termeni și condiții</a>
+            <a href="privacy.html">Confidențialitate</a>
+            <a href="cookies.html">Cookie-uri</a>
+            <a href="index.html">Acasă</a>
+          </nav>
+        </div>
+      </footer>
+    </main>
+
+    <script src="assets/js/main.js"></script>
+    <script src="assets/js/legal-config.js"></script>
+    <script src="assets/js/withdraw.js"></script>
+  </body>
+</html>

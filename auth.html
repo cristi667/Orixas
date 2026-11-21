@@ -5,12 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Creare cont Orixas.app și rezervare loc Founder Bundle." />
     <title>Orixas.app | Creare Cont</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap"
-      rel="stylesheet"
-    />
+    
+    
+    
     <link rel="stylesheet" href="assets/css/styles.css" />
   </head>
   <body>
@@ -41,9 +38,19 @@
           <div class="meter" aria-hidden="true"><span class="meter-fill" data-founder-meter style="width: 0%"></span></div>
           <h1>Creare cont și rezervare loc</h1>
           <p class="text-muted">
-            Completează datele de bază și rezervă planul Founder la 100 EUR/lună pe viață, cu acces la modulele
-            financiare și juridice prezente și viitoare.
+            Completează datele de bază și rezervă planul Founder la 100 EUR/lună, cu acces la modulele financiare și
+            juridice prezente și viitoare. Rezervarea se face prin plata unui avans de 50 EUR, care se deduce integral
+            din prima factură lunară.
           </p>
+
+          <div class="deposit-box">
+            <strong>Avans de rezervare: 50 EUR</strong>
+            <span class="text-muted">
+              Se deduce integral din prima factură (100 EUR/lună). Locul este ținut rezervat 35 de minute cât timp
+              finalizezi plata securizată. Ai drept de retragere în 14 zile, prin
+              <a href="retragere.html">funcția online de retragere</a>.
+            </span>
+          </div>
 
           <form id="signupForm" novalidate>
             <div class="form-grid">
@@ -73,9 +80,9 @@
               <input id="consentLegal" name="consentLegal" type="checkbox" required />
               <span>
                 Confirm că am citit și accept
-                <a href="terms.html">Termenii</a>
-                și
-                <a href="privacy.html">Politica de Confidențialitate</a>.
+                <a href="terms.html">Termenii și condițiile</a>,
+                <a href="privacy.html">Politica de Confidențialitate</a> și informarea privind
+                <a href="retragere.html">dreptul de retragere în 14 zile</a>.
               </span>
             </label>
 
@@ -85,7 +92,7 @@
             </label>
 
             <div class="actions">
-              <button class="btn btn-primary" type="submit">Rezervă unul dintre cele 20 locuri</button>
+              <button class="btn btn-primary" type="submit">Plătește avansul de 50 € și rezervă locul</button>
               <a class="btn" href="app.html">Vezi demo fără cont</a>
             </div>
             <p id="formMessage" class="message" aria-live="polite"></p>
@@ -108,5 +115,6 @@
     <script src="assets/js/main.js"></script>
     <script src="assets/js/founder.js"></script>
     <script src="assets/js/auth.js"></script>
+    <script src="assets/js/legal-config.js"></script>
   </body>
 </html>

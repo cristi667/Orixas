@@ -8,12 +8,9 @@
       content="Orixas.app: Asistent AI pentru e-Factura, SPV și legislație fiscal-juridică."
     />
     <title>Orixas.app | Financiar Azi, Juridic Mâine</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap"
-      rel="stylesheet"
-    />
+    
+    
+    
     <link rel="stylesheet" href="assets/css/styles.css" />
   </head>
   <body>
@@ -106,7 +103,8 @@
             <h3>20 de locuri. Acces pe viață la toate modulele.</h3>
             <p class="text-muted">Plătești o singură taxă lunară și rămâi cu același plan pe măsură ce lansăm noi agenți.</p>
             <ul class="small-list">
-              <li>100 EUR/lună pe viață</li>
+              <li>100 EUR/lună, preț fix pe durata de exploatare comercială a platformei</li>
+              <li>Avans de 50 EUR la rezervare, deductibil integral din prima factură</li>
               <li>Include Agentul Financiar și Agentul Juridic la lansare</li>
               <li>Memorie dedicată per CUI + suport prioritar</li>
             </ul>
@@ -117,6 +115,7 @@
               Locuri rămase: <strong data-founder-remaining>20</strong> din <span data-founder-total>20</span>
             </p>
             <div class="meter" aria-hidden="true"><span class="meter-fill" data-founder-meter style="width: 0%"></span></div>
+            <p class="small text-muted">Rezervarea se face cu un avans de 50 EUR, dedus integral din prima factură. Drept de retragere în 14 zile.</p>
             <a class="btn btn-primary" href="auth.html">Rezervă acum</a>
           </div>
         </article>
@@ -138,6 +137,12 @@
       </section>
 
       <footer class="site-footer">
+        <div class="sal-row">
+          <a href="https://reclamatiisal.anpc.ro" target="_blank" rel="noopener">
+            <img class="sal-badge" src="assets/img/sal.svg" width="250" height="50" alt="SAL - Soluționarea Alternativă a Litigiilor" />
+          </a>
+          <a class="small" href="https://anpc.ro" target="_blank" rel="noopener">Autoritatea Națională pentru Protecția Consumatorilor (ANPC)</a>
+        </div>
         <div class="footer-row">
           <span>Orixas.app • Platformă B2B SaaS pentru conformitate fiscală și juridică</span>
           <nav class="footer-links" aria-label="Linkuri legale">
@@ -151,5 +156,6 @@
 
     <script src="assets/js/main.js"></script>
     <script src="assets/js/founder.js"></script>
+    <script src="assets/js/legal-config.js"></script>
   </body>
 </html>

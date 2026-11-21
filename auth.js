@@ -6,6 +6,8 @@
     return;
   }
 
+  const DEPOSIT_LABEL = "50 €";
+
   function sanitize(value) {
     if (typeof window.oriSanitize === "function") {
       return window.oriSanitize(value);
@@ -35,6 +37,11 @@
     message.textContent = text;
   }
 
+  function showInfo(text) {
+    message.className = "message";
+    message.textContent = text;
+  }
+
   function showSuccess(text) {
     message.className = "message success";
     message.textContent = text;
@@ -45,6 +52,18 @@
       return body.details[0].message;
     }
     return (body && body.message) || "Rezervarea nu a putut fi salvata. Incearca din nou.";
+  }
+
+  /* Mesaj pentru plata anulata, la intoarcerea din Stripe. */
+  try {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("anulat") === "1") {
+      showInfo(
+        "Plata a fost anulata, deci locul nu a fost rezervat si nu ai fost taxat. Poti relua rezervarea oricand."
+      );
+    }
+  } catch (error) {
+    /* fara URLSearchParams nu afisam nimic */
   }
 
   form.addEventListener("submit", async function (event) {
@@ -80,7 +99,9 @@
     }
 
     if (!consentLegal) {
-      showError("Pentru crearea contului trebuie sa accepti Termenii si Politica de Confidentialitate.");
+      showError(
+        "Pentru rezervare trebuie sa accepti Termenii, Politica de confidentialitate si informarea privind dreptul de retragere."
+      );
       return;
     }
 
@@ -96,88 +117,71 @@
     if (submitButton) {
       submitButton.disabled = true;
       submitButton.dataset.previousLabel = submitButton.dataset.previousLabel || submitButton.textContent;
-      submitButton.textContent = "Se rezerva locul...";
+      submitButton.textContent = "Se pregateste plata...";
     }
 
-    const founderApi = window.oriFounder;
-    const result = founderApi && typeof founderApi.reserve === "function"
-      ? await founderApi.reserve(payload)
-      : { ok: false, status: 0, body: null, network: true };
+    try {
+      sessionStorage.setItem(
+        "orixasSignup",
+        JSON.stringify({
+          name: payload.name,
+          email: payload.email,
+          cui: payload.cui,
+          role: payload.role,
+          createdAt: new Date().toISOString()
+        })
+      );
+    } catch (err) {
+      /* fara sessionStorage continuam oricum */
+    }
+
+    const result = await window.oriFounder.reserve(payload);
 
     if (submitButton) {
       submitButton.disabled = false;
       submitButton.textContent = submitButton.dataset.previousLabel || "Rezerva un loc Founder";
     }
 
-    if (result.ok && result.body && result.body.account) {
-      const account = result.body.account;
-      const founder = result.body.founder || {};
-
-      try {
-        sessionStorage.setItem(
-          "orixasSignup",
-          JSON.stringify({
-            name: payload.name,
-            email: payload.email,
-            cui: payload.cui,
-            role: payload.role,
-            accountId: account.id,
-            seatNumber: account.seatNumber,
-            founderSeatsLeft: founder.remaining,
-            createdAt: account.createdAt
-          })
-        );
-      } catch (err) {
-        /* continui chiar daca sessionStorage nu e disponibil */
-      }
-
+    if (result.ok && result.body && result.body.checkoutUrl) {
       showSuccess(
-        "Cont creat. Locul Founder #" +
-          account.seatNumber +
-          " este rezervat pe numele " +
-          payload.email +
-          ". Au ramas " +
-          (typeof founder.remaining === "number" ? founder.remaining : "?") +
-          " locuri. Te redirectionam in platforma..."
+        "Locul " +
+          (result.body.account && result.body.account.seatNumber ? "#" + result.body.account.seatNumber + " " : "") +
+          "este tinut rezervat 35 de minute. Te redirectionam catre plata securizata a avansului de " +
+          DEPOSIT_LABEL +
+          "..."
       );
+      window.location.href = result.body.checkoutUrl;
+      return;
+    }
 
-      setTimeout(function () {
-        window.location.href = "app.html";
-      }, 1200);
+    if (result.ok && result.body && result.body.account) {
+      showSuccess("Rezervarea exista deja. Reincarca pagina sau scrie-ne la adresa de contact.");
       return;
     }
 
     if (result.network) {
-      // Backend-ul nu raspunde: pastram rezervarea local, ca sa nu pierdem datele introduse.
-      try {
-        sessionStorage.setItem(
-          "orixasSignup",
-          JSON.stringify({
-            name: payload.name,
-            email: payload.email,
-            cui: payload.cui,
-            role: payload.role,
-            pendingSync: true,
-            createdAt: new Date().toISOString()
-          })
-        );
-      } catch (err) {
-        /* ignore */
-      }
-
       showError(
-        "Serverul de rezervari nu este disponibil. Datele au fost salvate local in acest browser; reincearca dupa ce backend-ul este pornit."
+        "Serverul de rezervari nu este disponibil. Incearca din nou in cateva momente."
       );
       return;
     }
 
     if (result.body && result.body.error === "EMAIL_EXISTS") {
-      showError("Exista deja un cont cu aceasta adresa de email. Foloseste adresa contului existent sau scrie-ne.");
+      showError(
+        "Exista deja un loc platit cu aceasta adresa de email. Scrie-ne daca vrei sa modifici datele contului."
+      );
       return;
     }
 
     if (result.body && result.body.error === "SOLD_OUT") {
       showError("Toate cele 20 de locuri Founder Bundle sunt rezervate. Lasa-ne emailul pentru lista de asteptare.");
+      return;
+    }
+
+    if (result.body && result.body.error === "PAYMENTS_NOT_CONFIGURED") {
+      showError(
+        "Plata avansului nu este inca activa pe acest site. Rezervarile se deschid imediat ce procesatorul de plati este configurat."
+      );
       return;
     }
 

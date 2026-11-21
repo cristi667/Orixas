@@ -27,6 +27,8 @@
       taken: taken,
       remaining: Math.max(0, total - taken),
       soldOut: taken >= total,
+      depositCents: number(payload.depositCents, 5000),
+      depositCurrency: payload.depositCurrency || "eur",
       updatedAt: payload.updatedAt || null
     };
   }
@@ -65,7 +67,8 @@
         el.textContent = "Programul Founder este complet";
       } else {
         el.disabled = false;
-        el.textContent = "Rezerva unul dintre cele " + state.remaining + " locuri";
+        el.textContent =
+          "Plateste avansul de 50 EUR si rezerva unul dintre cele " + state.remaining + " locuri";
       }
     });
 

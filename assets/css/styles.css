@@ -830,3 +830,92 @@ body[data-founder-state="offline"] [data-founder-live]::after {
 .small {
   font-size: 0.82rem;
 }
+
+/* Legal + plati (avans 50 EUR) */
+.legal-doc h2 {
+  margin-top: 1.8rem;
+  font-size: 1.12rem;
+}
+
+.legal-list {
+  margin: 0.4rem 0 1rem;
+  padding-left: 1.1rem;
+  color: var(--text-muted);
+}
+
+.legal-list li {
+  margin-bottom: 0.45rem;
+}
+
+.legal-note {
+  margin: 1.2rem 0;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-soft);
+}
+
+.legal-bar {
+  margin-top: 0.8rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--border);
+}
+
+.legal-bar p {
+  margin: 0.15rem 0;
+  color: var(--text-muted);
+}
+
+.legal-bar a {
+  text-decoration: underline;
+}
+
+.deposit-box {
+  display: grid;
+  gap: 0.3rem;
+  margin: 1rem 0;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-md);
+  background: rgba(34, 211, 238, 0.07);
+}
+
+.deposit-box strong {
+  color: var(--accent);
+}
+
+.adnpc-badge,
+.sal-badge {
+  display: inline-block;
+  margin: 0.5rem 0;
+}
+
+.summary-list {
+  display: grid;
+  grid-template-columns: minmax(110px, 150px) 1fr;
+  gap: 0.35rem 1rem;
+  margin: 0.8rem 0;
+}
+
+.summary-list dt {
+  color: var(--text-muted);
+}
+
+.summary-list dd {
+  margin: 0;
+  word-break: break-word;
+}
+
+.admin-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+body[data-reservation-state="paid"] #reservationTitle {
+  color: var(--success);
+}
+
+body[data-reservation-state="expired"] #reservationTitle {
+  color: var(--danger);
+}
